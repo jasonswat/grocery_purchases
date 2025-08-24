@@ -1,2 +1,2 @@
 # grocery_purchases
-project for pulling grocery purchase data
+A project for pulling grocery purchase data.
