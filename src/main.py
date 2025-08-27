@@ -1,4 +1,8 @@
 '''Main entry point for the application.'''
 
-if __name__ == "__main__":
+def main() -> None:
+    """Execute the main logic of the script."""
     print("Hello, World!")
+
+if __name__ == "__main__":
+    main()
