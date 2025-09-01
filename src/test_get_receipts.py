@@ -1,7 +1,7 @@
 from pathlib import Path
 from app_settings import AppSettings, log
 from utils import setup_context
-from get_receipts import get_receipts
+from kroger import get_receipts
 from playwright.sync_api import sync_playwright
 
 
@@ -19,4 +19,4 @@ with sync_playwright() as p:
     browser, context = setup_context(p, settings)
     page = context.new_page()
     page.goto(purchases_url)
-    receipts = get_receipts(page, purchases_url, purchases_url)
+    receipts = get_receipts(page, purchases_url, purchases_url, settings)

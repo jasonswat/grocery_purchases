@@ -1,6 +1,6 @@
 '''Main entry point for the application.'''
 from app_settings import AppSettings, log
-from get_receipts import get_receipts
+from kroger import get_receipts
 from parse_receipt import parse_receipt
 from playwright.sync_api import sync_playwright
 
@@ -16,7 +16,7 @@ def main(settings: AppSettings):
         browser, context, page = sign_in(p, purchases_url, timeout, settings)
         base_url = f"https://{kroger_domain}/mypurchases/image/"
         try:
-            receipts = get_receipts(page, purchases_url, redirect_url)
+            receipts = get_receipts(page, purchases_url, redirect_url, settings)
             # for testing
             # receipts = ['705~00851~2023-04-04~500~1261444', '705~00851~2023-04-06~504~1841930', '705~00851~2023-04-07~504~1511846']
             for receipt in receipts:
