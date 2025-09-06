@@ -31,4 +31,5 @@ def test_browser_settings():
         browser.close()
 
 
-test_browser_settings()
+if __name__ == "__main__":
+    test_browser_settings()
