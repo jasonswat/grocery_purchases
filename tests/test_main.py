@@ -10,7 +10,7 @@ from main import main
 @patch("main.get_receipts")
 @patch("main.sign_in")
 @patch("main.sync_playwright")
-def test_main_happy_path(mock_sync_playwright, mock_sign_in, mock_get_receipts, mock_parse_receipt):
+def test_main_happy_path(_mock_sync_playwright, mock_sign_in, mock_get_receipts, mock_parse_receipt):
     """Test the main function in a happy path scenario."""
     # Arrange
     mock_settings = MagicMock(spec=AppSettings)
