@@ -14,7 +14,7 @@ def main(settings: AppSettings):
     timeout = 60000  # 60 seconds
 
     with sync_playwright() as p:
-        browser, context, page = sign_in(p, purchases_url, timeout, settings)
+        browser, context, page = sign_in(p, purchases_url, settings)
         base_url = f"https://{kroger_domain}/mypurchases/image/"
         try:
             receipts = get_receipts(page, purchases_url, redirect_url, settings)
