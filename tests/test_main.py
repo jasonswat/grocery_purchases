@@ -1,6 +1,5 @@
 from unittest.mock import MagicMock, patch
-
-import pytest
+from unittest.mock import call
 
 from app_settings import AppSettings
 from main import main
@@ -26,8 +25,12 @@ def test_main_happy_path(_mock_sync_playwright, mock_sign_in, mock_get_receipts,
     # Assert
     mock_sign_in.assert_called_once()
     mock_get_receipts.assert_called_once()
-    assert mock_parse_receipt.call_count == 2
-    mock_parse_receipt.assert_any_call(mock_page, "https://www.qfc.com/mypurchases/image/", "receipt1", "order_data.json")
-    mock_parse_receipt.assert_any_call(mock_page, "https://www.qfc.com/mypurchases/image/", "receipt2", "order_data.json")
+    base_url = "https://www.qfc.com/mypurchases/image/"
+    order_data_file = "order_data.json"
+    expected_calls = [
+        call(mock_page, base_url, "receipt1", order_data_file),
+        call(mock_page, base_url, "receipt2", order_data_file),
+    ]
+    mock_parse_receipt.assert_has_calls(expected_calls, any_order=True)
     mock_context.close.assert_called_once()
     mock_browser.close.assert_called_once()
