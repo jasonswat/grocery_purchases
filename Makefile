@@ -10,5 +10,11 @@ test: ## build container locally
 	pytest .
 
 lint: ## run pycodestyle on python files
-	pycodestyle
+	flake8 ./src	
+
+check_browser: ## Check to see if browser settings pass bot checks
+	PYTHONPATH=./src python src/util/test_browser_settings.py
+
+test_get_receipts:  ## Run get_receipts function with sample data
+	PYTHONPATH=./src python src/util/test_get_receipts.py
 

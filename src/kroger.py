@@ -6,14 +6,17 @@ from utils import move_mouse, setup_context
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
 
+
 def random_sleep(max_sleep):
     sleep_time = randint(3, max_sleep)
     log.info(f"Sleeping for {sleep_time} seconds to simulate human interaction.")
     sleep(sleep_time)
 
+
 def get_basename_from_url(url):
     parsed_url = urlparse(url)
     return os.path.basename(parsed_url.path)
+
 
 def get_receipts(page, purchases_url, redirect_url, settings):
     max_sleep = settings.MAX_SLEEP
@@ -37,6 +40,7 @@ def get_receipts(page, purchases_url, redirect_url, settings):
         log.debug(f"receipt_id: {receipt_id}")
     log.info(f"Found {len(receipts)} receipts {receipts}.")
     return receipts
+
 
 def sign_in(p, purchases_url, settings):
     username = settings.KROGER_USERNAME

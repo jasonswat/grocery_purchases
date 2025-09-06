@@ -9,7 +9,7 @@ from playwright.sync_api import sync_playwright
 
 
 # Get the project root directory (which is the parent of the 'src' directory)
-project_root = Path(__file__).parent.parent
+project_root = Path(__file__).parent.parent.parent
 settings = AppSettings()  # Initialize settings and logging
 log.info(f"Project root directory: {project_root}")
 purchases_url = f"file://{project_root}/tests/html/Purchase_History.html"
