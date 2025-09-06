@@ -11,7 +11,6 @@ def main(settings: AppSettings):
     kroger_domain = 'www.qfc.com'  # This will hopefully work at fredmeyer.com or other kroger stores as well
     purchases_url = f"https://{kroger_domain}/mypurchases"
     redirect_url = "https://www.qfc.com/mypurchases?tab=purchases&page=36"
-    timeout = 60000  # 60 seconds
 
     with sync_playwright() as p:
         browser, context, page = sign_in(p, purchases_url, settings)

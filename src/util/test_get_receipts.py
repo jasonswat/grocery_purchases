@@ -1,5 +1,3 @@
-import os
-import sys
 from pathlib import Path
 from app_settings import AppSettings, log
 from utils import setup_context
@@ -9,11 +7,9 @@ from playwright.sync_api import sync_playwright
 
 """Test script to verify get_receipts function using a local HTML file."""
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/../")
-
 
 # Get the project root directory (which is the parent of the 'src' directory)
-project_root = Path(__file__).parent.parent
+project_root = Path(__file__).parent.parent.parent
 settings = AppSettings()  # Initialize settings and logging
 log.info(f"Project root directory: {project_root}")
 purchases_url = f"file://{project_root}/tests/html/Purchase_History.html"
