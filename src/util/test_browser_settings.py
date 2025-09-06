@@ -5,7 +5,7 @@ from utils import move_mouse, setup_context
 
 """
 Test script to verify browser context passes bot detection from bot.sannysoft.com.
-Run from the root directory `python src/util/test_browser_settings.py`
+Run from the root directory using 'make check_browser' or 'PYTHONPATH=./src python src/util/test_browser_settings.py'
 
 Check this file to validate it's all green
 Output: browser_settings.png
