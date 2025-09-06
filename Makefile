@@ -7,14 +7,17 @@ requirements: ## Install requirements
 	pip install -r requirements.txt
 
 test: ## build container locally
-	pytest .
+	PYTHONPATH=./src pytest .
+
+test-coverage: ## Run tests with coverage
+	PYTHONPATH=./src pytest --cov=src --cov-report=html
 
 lint: ## run pycodestyle on python files
 	flake8 ./src	
 
 check_browser: ## Check to see if browser settings pass bot checks
-	PYTHONPATH=./src python src/util/test_browser_settings.py
+	PYTHONPATH=./src python src/util/helper_browser_settings.py
 
 test_get_receipts:  ## Run get_receipts function with sample data
-	PYTHONPATH=./src python src/util/test_get_receipts.py
+	PYTHONPATH=./src python src/util/helper_get_receipts.py
 
