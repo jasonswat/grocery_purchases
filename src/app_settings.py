@@ -1,12 +1,11 @@
 import logging
 import os
 from pydantic_settings import BaseSettings
-from pydantic import SecretStr, StrictStr, model_validator 
+from pydantic import SecretStr, StrictStr, model_validator
 
 """Application settings using Pydantic BaseSettings."""
 
 
-"""Initialize logging configuration."""
 def get_log():
     loglevel = os.getenv('LOGLEVEL', 'INFO').upper()
     logging.basicConfig(
@@ -16,7 +15,9 @@ def get_log():
     log = logging.getLogger(__name__)
     return log
 
+
 log = get_log()
+
 
 class AppSettings(BaseSettings):
     LOGLEVEL: StrictStr = "INFO"  # Default log level

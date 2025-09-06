@@ -7,6 +7,7 @@ from datetime import datetime
 from bs4 import BeautifulSoup
 from typing import List, Dict, Any
 
+
 def receipt_id_exists(filename: str, receipt_id: str) -> bool:
     logging.info(f"Checking if receipt ID '{receipt_id}' exists in '{filename}'.")
     try:
@@ -22,6 +23,7 @@ def receipt_id_exists(filename: str, receipt_id: str) -> bool:
         if record.get('receipt_id') == receipt_id:
             return True
     return False
+
 
 def parse_price_and_quantity(price_and_quantity: str):
     # Format 1: "quantity x $price"
@@ -42,10 +44,12 @@ def parse_price_and_quantity(price_and_quantity: str):
 
     raise ValueError("Invalid price string format for {}".format(price_and_quantity))
 
+
 def extract_upc(upc_string):
     match = re.match(r"UPC:\s*(\d+)", upc_string)
     if match:
         return match.group(1)
+
 
 def parse_items(soup):
     items = []
@@ -63,28 +67,32 @@ def parse_items(soup):
         item_upc = item_group.find('div', class_='ml-12 mt-4 font-secondary body-s text-neutral-most-prominent').text
         upc_id = extract_upc(item_upc)
         quantity, weight, price = parse_price_and_quantity(price_and_quantity)
-        item = { "upc_id": upc_id, "item_name": item_name, "quantity": quantity, "weight": weight, "price": price, "original_price": original_price }
+        item = {"upc_id": upc_id, "item_name": item_name, "quantity": quantity, "weight": weight, "price": price, "original_price": original_price}
         items.append(item)
         # print(item)
     return items
+
 
 def remove_symbols(text_string):
     for char in "$":
         text_string = text_string.replace(char, "")
     return text_string
 
-def format_date(date_string, current_format = "%B %d, %Y"): # March 22, 2025
+
+def format_date(date_string, current_format="%B %d, %Y"):  # March 22, 2025
     try:
         date_object = datetime.strptime(date_string, current_format)
         return date_object.strftime("%Y-%m-%d")
     except ValueError:
         return None
 
+
 def extract_span_text(soup, span_string):
     # Search for the string and work backwards to get the total
     find_span = soup.find('span', string=span_string)
     span_text = find_span.next_sibling.text
     return span_text
+
 
 def output_receipt(receipt_id, receipt_date, receipt_total, receipt_tax, receipt_items, output_file):
     logging.info(f"Writing receipt ID: {receipt_id} to {output_file}")
@@ -100,18 +108,19 @@ def output_receipt(receipt_id, receipt_date, receipt_total, receipt_tax, receipt
             try:
                 receipts = json.load(f)
             except json.JSONDecodeError:
-                receipts = [] #file is empty or corrupt
+                receipts = []  # File is empty or corrupt
             if isinstance(receipts, list):
                 receipts.append(receipt_data)
             else:
-                receipts = [receipts, receipt_data] # the json file was a single dictionary, convert to a list
+                receipts = [receipts, receipt_data]  # The json file was a single dictionary, convert to a list
             f.seek(0)  # Go back to the beginning of the file
             json.dump(receipts, f, indent=None)
-            f.truncate() #remove the old content
+            f.truncate()  # Remove the old content
     except FileNotFoundError:
         # File doesn't exist, create it and write the receipt
         with open(output_file, 'w') as f:
-            json.dump([receipt_data], f, indent=None) # Use indent=4 for pretty printing, indent=None for compact
+            json.dump([receipt_data], f, indent=None)  # Use indent=4 for pretty printing, indent=None for compact
+
 
 def parse_receipt(page, base_url, receipt_id, output_file):
     logging.info(f"Parsing receipt ID: {receipt_id}")
@@ -121,9 +130,9 @@ def parse_receipt(page, base_url, receipt_id, output_file):
         return f"Receipt ID '{receipt_id}' already exists in '{output_file}'."
     else:
         logging.info(f"Receipt ID '{receipt_id}' does not exist in '{output_file}' getting contents of receipt.")
-        sleep(randint(3,20))
+        sleep(randint(3, 20))
         page.goto(receipt_url)
-        sleep(randint(3,20))
+        sleep(randint(3, 20))
         page.is_visible('div.PH-ProductCard-container')
         html = page.inner_html('#receipt-print-area')
         soup = BeautifulSoup(html, 'html.parser')
