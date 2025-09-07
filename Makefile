@@ -6,14 +6,14 @@ help: ## this help
 requirements: ## Install requirements
 	pip install -r requirements.txt
 
-test: ## build container locally
-	PYTHONPATH=./src pytest .
-
-test-coverage: ## Run tests with coverage
-	PYTHONPATH=./src pytest --cov=src --cov-report=html
-
 lint: ## run pycodestyle on python files
 	flake8 ./src	
+
+test: ## Run tests with coverage
+	PYTHONPATH=./src pytest --cov=src --cov-report=html
+
+coverage: ## Run tests with coverage and display report in terminal
+	PYTHONPATH=./src pytest --cov=src --cov-report=term-missing
 
 check_browser: ## Check to see if browser settings pass bot checks
 	PYTHONPATH=./src python src/util/helper_browser_settings.py

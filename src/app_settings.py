@@ -1,5 +1,6 @@
 import logging
 import os
+import sys
 from pydantic_settings import BaseSettings
 from pydantic import SecretStr, StrictStr, model_validator
 
@@ -8,15 +9,13 @@ from pydantic import SecretStr, StrictStr, model_validator
 
 def get_log():
     loglevel = os.getenv('LOGLEVEL', 'INFO').upper()
-    logging.basicConfig(
-        level=loglevel,
-        format='%(asctime)s - %(levelname)s - %(message)s'
-    )
     log = logging.getLogger(__name__)
+    log.setLevel(loglevel)
+    handler = logging.StreamHandler(sys.stderr)
+    handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+    if not log.handlers:
+        log.addHandler(handler)
     return log
-
-
-log = get_log()
 
 
 class AppSettings(BaseSettings):
@@ -32,10 +31,13 @@ class AppSettings(BaseSettings):
         """
         Log the application settings on startup, excluding sensitive information.
         """
+        log = get_log()
         settings_to_log = self.model_dump()
 
-        logging.info("Application settings:")
+        log.info("Application settings:")
         for key, value in settings_to_log.items():
-            logging.info(f"{key}: {value}")
+            if key.lower() == 'kroger_password':
+                continue
+            log.info(f"{key}: {value}")
 
         return self
