@@ -2,7 +2,6 @@ import re
 import json
 import logging
 from app_settings import get_log
-logging = get_log()
 from random import randint
 from time import sleep
 from datetime import datetime
