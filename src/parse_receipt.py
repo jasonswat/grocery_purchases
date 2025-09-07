@@ -1,11 +1,14 @@
 import re
 import json
 import logging
+from app_settings import get_log
 from random import randint
 from time import sleep
 from datetime import datetime
 from bs4 import BeautifulSoup
 from typing import List, Dict, Any
+
+log = get_log()
 
 
 def receipt_id_exists(filename: str, receipt_id: str) -> bool:
@@ -95,7 +98,7 @@ def extract_span_text(soup, span_string):
 
 
 def output_receipt(receipt_id, receipt_date, receipt_total, receipt_tax, receipt_items, output_file):
-    logging.info(f"Writing receipt ID: {receipt_id} to {output_file}")
+    log.info(f"Writing receipt ID: {receipt_id} to {output_file}")
     receipt_data = {
         "receipt_id": receipt_id,
         "date": receipt_date,
@@ -129,7 +132,7 @@ def parse_receipt(page, base_url, receipt_id, output_file):
     if receipt_id_exists(output_file, receipt_id):
         return f"Receipt ID '{receipt_id}' already exists in '{output_file}'."
     else:
-        logging.info(f"Receipt ID '{receipt_id}' does not exist in '{output_file}' getting contents of receipt.")
+        log.info(f"Receipt ID '{receipt_id}' does not exist in '{output_file}' getting contents of receipt.")
         sleep(randint(3, 20))
         page.goto(receipt_url)
         sleep(randint(3, 20))
@@ -143,6 +146,6 @@ def parse_receipt(page, base_url, receipt_id, output_file):
         receipt_tax = extract_span_text(soup, "Sales Tax")
         receipt_tax = remove_symbols(receipt_tax)
         receipt_items = parse_items(soup)
-        logging.info(f"Receipt ID: {receipt_id} items gathered, writing receipt to {output_file}")
+        log.info(f"Receipt ID: {receipt_id} items gathered, writing receipt to {output_file}")
         output_receipt(receipt_id, receipt_date, receipt_total, receipt_tax, receipt_items, output_file)
         return f"Receipt ID '{receipt_id}' parsed and saved to '{output_file}'."

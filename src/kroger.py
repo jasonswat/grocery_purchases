@@ -1,11 +1,12 @@
 import os
 from random import randint
 from time import sleep
-from app_settings import log
+from app_settings import get_log
 from utils import move_mouse, setup_context
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
 
+log = get_log()
 
 def random_sleep(max_sleep):
     sleep_time = randint(3, max_sleep)

@@ -1,4 +1,4 @@
-from app_settings import AppSettings, log
+from app_settings import AppSettings, get_log
 from kroger import get_receipts, sign_in
 from parse_receipt import parse_receipt
 from playwright.sync_api import sync_playwright
@@ -28,6 +28,7 @@ def main(settings: AppSettings):
 
 
 if __name__ == "__main__":
+    log = get_log()
     settings = AppSettings()
     log.info("Starting the application..")
     main(settings=settings)
