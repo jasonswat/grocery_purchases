@@ -57,22 +57,32 @@ def extract_upc(upc_string):
 def parse_items(soup):
     items = []
     item_groups = soup.find_all('div', class_='mt-8 mb-4')
+    if not item_groups:
+        log.error("No item groups found in receipt. Unable to parse items.")
+        raise ValueError("No item groups found in receipt.")
     for item_group in item_groups:
-        item_name = item_group.find('span', class_="kds-Text--m kds-Text--bold").text
-        if item_group.find('span', class_='line-through'):
-            # item will only have original price if it's a markdown
-            original_price = item_group.find('span', class_='line-through').text
-            original_price = remove_symbols(original_price)
-        else:
+        try:
+            item_name = item_group.find('span', class_="kds-Text--m kds-Text--bold").text
             original_price = None
-        price_group = item_group.select('span.kds-Text--m:not(.kds-Text--bold)')
-        price_and_quantity = price_group[1].contents[0]
-        item_upc = item_group.find('div', class_='ml-12 mt-4 font-secondary body-s text-neutral-most-prominent').text
-        upc_id = extract_upc(item_upc)
-        quantity, weight, price = parse_price_and_quantity(price_and_quantity)
-        item = {"upc_id": upc_id, "item_name": item_name, "quantity": quantity, "weight": weight, "price": price, "original_price": original_price}
-        items.append(item)
-        # print(item)
+            log.debug(f"Item name: {item_name}")
+            if item_group.find('span', class_='line-through'):
+                # item will only have original price if it's a markdown
+                original_price = item_group.find('span', class_='line-through').text
+                original_price = remove_symbols(original_price)
+            price_group = item_group.select('span.kds-Text--m:not(.kds-Text--bold)')
+            price_and_quantity = price_group[1].contents[0]
+            item_upc = item_group.find('div', class_='ml-12 mt-4 font-secondary body-s text-neutral-most-prominent').text
+            upc_id = extract_upc(item_upc)
+            quantity, weight, price = parse_price_and_quantity(price_and_quantity)
+            item = {"upc_id": upc_id, "item_name": item_name, "quantity": quantity, "weight": weight, "price": price, "original_price": original_price}
+            items.append(item)
+            log.debug(f"Added item to list: {item}")
+        except (AttributeError, IndexError) as e:
+            log.warning(f"Could not parse an item, skipping. Error: {e}")
+            continue
+    if not items:
+        log.error("Could not parse any items from the receipt.")
+        raise ValueError("Could not parse any items from the receipt.")
     return items
 
 
@@ -120,13 +130,14 @@ def output_receipt(receipt_id, receipt_date, receipt_total, receipt_tax, receipt
             json.dump(receipts, f, indent=None)
             f.truncate()  # Remove the old content
     except FileNotFoundError:
+        log.info(f"File '{output_file}' not found, creating file.")
         # File doesn't exist, create it and write the receipt
         with open(output_file, 'w') as f:
             json.dump([receipt_data], f, indent=None)  # Use indent=4 for pretty printing, indent=None for compact
 
 
 def parse_receipt(page, base_url, receipt_id, output_file):
-    logging.info(f"Parsing receipt ID: {receipt_id}")
+    log.info(f"Parsing receipt ID: {receipt_id}")
     receipt_url = base_url + receipt_id
     # Check if receipt_id exists
     if receipt_id_exists(output_file, receipt_id):
