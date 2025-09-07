@@ -9,7 +9,7 @@ from pydantic import SecretStr, StrictStr, model_validator
 
 def get_log():
     loglevel = os.getenv('LOGLEVEL', 'INFO').upper()
-    log = logging.getLogger(__name__)
+    log = logging.getLogger("app")
     log.setLevel(loglevel)
     handler = logging.StreamHandler(sys.stderr)
     handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
