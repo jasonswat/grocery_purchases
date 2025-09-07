@@ -9,9 +9,18 @@ from app_settings import AppSettings, get_log
 
 
 @pytest.fixture(autouse=True)
-def clear_env_vars():
-    """Clear environment variables before each test."""
-    os.environ.clear()
+def clear_env_vars(monkeypatch):
+    """Clear environment variables used by AppSettings before each test."""
+    app_settings_vars = [
+        "LOGLEVEL",
+        "KROGER_USERNAME",
+        "KROGER_PASSWORD",
+        "HEADLESS",
+        "TIMEOUT",
+        "MAX_SLEEP",
+    ]
+    for var in app_settings_vars:
+        monkeypatch.delenv(var, raising=False)
 
 
 def test_get_log_default_level(caplog):
