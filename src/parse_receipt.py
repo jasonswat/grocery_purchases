@@ -1,26 +1,26 @@
 import re
 import json
-import logging
 from app_settings import get_log
 from random import randint
 from time import sleep
 from datetime import datetime
 from bs4 import BeautifulSoup
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional, Union
+
 
 log = get_log()
 
 
 def receipt_id_exists(filename: str, receipt_id: str) -> bool:
-    logging.info(f"Checking if receipt ID '{receipt_id}' exists in '{filename}'.")
+    log.info(f"Checking if receipt ID '{receipt_id}' exists in '{filename}'.")
     try:
         with open(filename, 'r') as f:
             receipts: List[Dict[str, Any]] = json.load(f)
     except FileNotFoundError:
-        logging.error(f"Error: File '{filename}' not found.")
+        log.error(f"Error: File '{filename}' not found.")
         return False
     except json.JSONDecodeError:
-        logging.error(f"Error: File '{filename}' is not a valid JSON file.")
+        log.error(f"Error: File '{filename}' is not a valid JSON file.")
         return False
     for record in receipts:
         if record.get('receipt_id') == receipt_id:
@@ -28,18 +28,21 @@ def receipt_id_exists(filename: str, receipt_id: str) -> bool:
     return False
 
 
-def parse_price_and_quantity(price_and_quantity: str):
+def parse_price_and_quantity(price_and_quantity: str) -> tuple[Optional[int], Optional[float], float]:
+    quantity: Union[int, None]
+    weight: Union[float, None]
     # Format 1: "quantity x $price"
+    # Example: "2 x $3.99"
     match1 = re.match(r"(\d+\.?\d*)\s*\s*x\s*\$(\d+\.?\d*)(\s)?(each)?", price_and_quantity)
+    # Format 2: "weight lbs x $price each (approx.)"
+    # Example: "1.28 lbs x $7.99 each (approx.)"
+    match2 = re.match(r"(\d+\.?\d*)\s*lbs\s*x\s*\$(\d+\.?\d*)(\s*each)?(\s*\(approx\.\))?", price_and_quantity)
     if match1:
         quantity = int(match1.group(1))
         price = float(match1.group(2))
         weight = None  # No weight in this format
         return quantity, weight, price
-
-    # Format 2: "weight lbs x $price each (approx.)"
-    match2 = re.match(r"(\d+\.?\d*)\s*lbs\s*x\s*\$(\d+\.?\d*)\s*(each)?", price_and_quantity)
-    if match2:
+    elif match2:
         weight = float(match2.group(1))
         price = float(match2.group(2))
         quantity = None  # No quantity in this format
@@ -71,10 +74,11 @@ def parse_items(soup):
                 original_price = remove_symbols(original_price)
             price_group = item_group.select('span.kds-Text--m:not(.kds-Text--bold)')
             price_and_quantity = price_group[1].contents[0]
+            log.debug(f"Price and quantity: {price_and_quantity}")
             item_upc = item_group.find('div', class_='ml-12 mt-4 font-secondary body-s text-neutral-most-prominent').text
             upc_id = extract_upc(item_upc)
             quantity, weight, price = parse_price_and_quantity(price_and_quantity)
-            item = {"upc_id": upc_id, "item_name": item_name, "quantity": quantity, "weight": weight, "price": price, "original_price": original_price}
+            item: Dict[str, Any] = {"upc_id": upc_id, "item_name": item_name, "quantity": quantity, "weight": weight, "price": price, "original_price": original_price}
             items.append(item)
             log.debug(f"Added item to list: {item}")
         except (AttributeError, IndexError) as e:
@@ -136,27 +140,20 @@ def output_receipt(receipt_id, receipt_date, receipt_total, receipt_tax, receipt
             json.dump([receipt_data], f, indent=None)  # Use indent=4 for pretty printing, indent=None for compact
 
 
-def parse_receipt(page, base_url, receipt_id, output_file):
-    log.info(f"Parsing receipt ID: {receipt_id}")
-    receipt_url = base_url + receipt_id
-    # Check if receipt_id exists
-    if receipt_id_exists(output_file, receipt_id):
-        return f"Receipt ID '{receipt_id}' already exists in '{output_file}'."
-    else:
-        log.info(f"Receipt ID '{receipt_id}' does not exist in '{output_file}' getting contents of receipt.")
-        sleep(randint(3, 20))
-        page.goto(receipt_url)
-        sleep(randint(3, 20))
-        page.is_visible('div.PH-ProductCard-container')
-        html = page.inner_html('#receipt-print-area')
-        soup = BeautifulSoup(html, 'html.parser')
-        receipt_total = extract_span_text(soup, "Order Total")
-        receipt_total = remove_symbols(receipt_total)
-        receipt_date = extract_span_text(soup, "Order Date: ")
-        receipt_date = format_date(receipt_date)
-        receipt_tax = extract_span_text(soup, "Sales Tax")
-        receipt_tax = remove_symbols(receipt_tax)
-        receipt_items = parse_items(soup)
-        log.info(f"Receipt ID: {receipt_id} items gathered, writing receipt to {output_file}")
-        output_receipt(receipt_id, receipt_date, receipt_total, receipt_tax, receipt_items, output_file)
-        return f"Receipt ID '{receipt_id}' parsed and saved to '{output_file}'."
+def parse_receipt(page, receipt_url, receipt_id, output_file):
+    sleep(randint(3, 20))
+    page.goto(receipt_url)
+    sleep(randint(3, 20))
+    page.is_visible('div.PH-ProductCard-container')
+    html = page.inner_html('#receipt-print-area')
+    soup = BeautifulSoup(html, 'html.parser')
+    receipt_total = extract_span_text(soup, "Order Total")
+    receipt_total = remove_symbols(receipt_total)
+    receipt_date = extract_span_text(soup, "Order Date: ")
+    receipt_date = format_date(receipt_date)
+    receipt_tax = extract_span_text(soup, "Sales Tax")
+    receipt_tax = remove_symbols(receipt_tax)
+    receipt_items = parse_items(soup)
+    log.info(f"Receipt ID: {receipt_id} items gathered, writing receipt to {output_file}")
+    output_receipt(receipt_id, receipt_date, receipt_total, receipt_tax, receipt_items, output_file)
+    return f"Receipt ID '{receipt_id}' parsed and saved to '{output_file}'."

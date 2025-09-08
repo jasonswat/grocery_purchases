@@ -1,12 +1,16 @@
 from random import randint
+
 from fake_useragent import UserAgent
+from playwright.sync_api import Browser, BrowserContext, Page, Playwright
+
+from app_settings import AppSettings
 
 """
 Settings to help avoid bot detection by akamai. Change user agent, playwright defaults trigger detection.
 """
 
 
-def rotate_user_agent():
+def rotate_user_agent() -> str:
     # For testing, other user agent options:
     # ua = UserAgent()  # All user agents
     # ua = UserAgent(min_version=134.0)  # User agents newer than min_version
@@ -17,7 +21,7 @@ def rotate_user_agent():
     # return "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36"
 
 
-def setup_context(playwright, settings):
+def setup_context(playwright: Playwright, settings: AppSettings) -> tuple[Browser, BrowserContext]:
     # These were tested on chromium, not sure if they work on other browsers
     # Chromium settings
     browser_args = [
@@ -38,7 +42,7 @@ def setup_context(playwright, settings):
     return browser, context
 
 
-def move_mouse(page):
+def move_mouse(page: Page) -> None:
     randomx = randint(0, 50)
     randomy = randint(0, 50)
     page.mouse.move(randomx, randomy)

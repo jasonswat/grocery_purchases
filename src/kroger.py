@@ -3,10 +3,11 @@ from random import randint
 from time import sleep
 from app_settings import get_log
 from utils import move_mouse, setup_context
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 from urllib.parse import urlparse
 
 log = get_log()
+
 
 def random_sleep(max_sleep):
     sleep_time = randint(3, max_sleep)
@@ -32,13 +33,16 @@ def get_receipts(page, purchases_url, redirect_url, settings):
     html = page.inner_html('#PurchaseResultsColumn')
     soup = BeautifulSoup(html, 'html.parser')
     links = soup.find_all('a', {'class': 'kds-Link kds-Link--inherit kds-Link--implied block p-16 text-neutral-most-prominent no-underline sm:py-24'})
-    log.debug(f"Links: {links}")
+    # log.debug(f"Links: {links}")
     receipts = []
     for a in links:
-        log.debug(f"a: {a}")
-        receipt_id = get_basename_from_url(a['href'])
-        receipts.append(receipt_id)
-        log.debug(f"receipt_id: {receipt_id}")
+        # log.debug(f"a: {a}")
+        if isinstance(a, Tag):
+            href = a.get('href')
+            if href:
+                receipt_id = get_basename_from_url(href)
+                receipts.append(receipt_id)
+                log.debug(f"receipt_id: {receipt_id}")
     log.info(f"Found {len(receipts)} receipts {receipts}.")
     return receipts
 

@@ -1,3 +1,5 @@
+# App files
+order_data.json
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -26,13 +28,6 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
-
-# PyInstaller
-#  Usually these files are created by a PyInstaller script from a spec file
-#  *.spec
-#  But sometimes they are created on the fly
-#  dist/
-#  build/
 
 # Pytest
 .pytest_cache/

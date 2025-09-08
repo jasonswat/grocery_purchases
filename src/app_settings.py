@@ -7,7 +7,7 @@ from pydantic import SecretStr, StrictStr, model_validator
 """Application settings using Pydantic BaseSettings."""
 
 
-def get_log():
+def get_log() -> logging.Logger:
     loglevel = os.getenv('LOGLEVEL', 'INFO').upper()
     log = logging.getLogger("app")
     log.setLevel(loglevel)
@@ -36,8 +36,6 @@ class AppSettings(BaseSettings):
 
         log.info("Application settings:")
         for key, value in settings_to_log.items():
-            if key.lower() == 'kroger_password':
-                continue
             log.info(f"{key}: {value}")
 
         return self

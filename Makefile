@@ -7,7 +7,8 @@ requirements: ## Install requirements
 	pip install -r requirements.txt
 
 lint: ## run pycodestyle on python files
-	flake8 ./src	
+	flake8 ./src
+	mypy --ignore-missing-imports --check-untyped-defs ./src
 
 test: ## Run tests with coverage
 	PYTHONPATH=./src pytest --cov=src --cov-report=html
@@ -19,5 +20,7 @@ check_browser: ## Check to see if browser settings pass bot checks
 	PYTHONPATH=./src python src/util/helper_browser_settings.py
 
 test_get_receipts:  ## Run get_receipts function with sample data
-	PYTHONPATH=./src python src/util/helper_get_receipts.py
+	LOGLEVEL=DEBUG PYTHONPATH=./src python src/util/helper_get_receipts.py
 
+main:  ## Run main.py 
+	PYTHONPATH=./src python src/main.py
