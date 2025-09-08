@@ -11,6 +11,8 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      PYTHONPATH: ./src
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python
@@ -22,8 +24,8 @@ jobs:
           python -m pip install --upgrade pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
       - name: Run tests and generate coverage report
-        run: pytest --cov=src --cov-report=term-missing:skip-covered | tee coverage.txt
+        run: pytest --cov=src --cov-report=xml
       - name: Comment coverage on PR
         uses: MishaKav/pytest-coverage-comment@main
         with:
-          pytest-coverage-path: ./coverage.txt
+          pytest-coverage-path: ./coverage.xml
