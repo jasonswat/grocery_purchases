@@ -5,6 +5,7 @@ from playwright.sync_api import sync_playwright
 
 log = get_log()
 
+
 def main(settings: AppSettings):
 
     """Main function."""
