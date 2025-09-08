@@ -68,9 +68,10 @@ def parse_items(soup):
             item_name = item_group.find('span', class_="kds-Text--m kds-Text--bold").text
             original_price = None
             log.debug(f"Item name: {item_name}")
-            if item_group.find('span', class_='line-through'):
+            line_through_span = item_group.find('span', class_='line-through')
+            if line_through_span:
                 # item will only have original price if it's a markdown
-                original_price = item_group.find('span', class_='line-through').text
+                original_price = line_through_span.text
                 original_price = remove_symbols(original_price)
             price_group = item_group.select('span.kds-Text--m:not(.kds-Text--bold)')
             price_and_quantity = price_group[1].contents[0]
