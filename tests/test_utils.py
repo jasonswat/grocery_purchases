@@ -56,4 +56,4 @@ def test_move_mouse(mock_randint):
         mock.call.mouse.move(50, 50),
         mock.call.mouse.up(),
     ]
-    mock_page.assert_has_calls(expected_calls)
+    assert mock_page.mock_calls == expected_calls
