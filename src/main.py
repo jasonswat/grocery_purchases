@@ -3,6 +3,7 @@ from kroger import get_receipts, sign_in
 from parse_receipt import parse_receipt, receipt_id_exists
 from playwright.sync_api import sync_playwright
 
+log = get_log()
 
 def main(settings: AppSettings):
 

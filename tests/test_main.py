@@ -28,8 +28,8 @@ def test_main_happy_path(_mock_sync_playwright, mock_sign_in, mock_get_receipts,
     base_url = "https://www.qfc.com/mypurchases/image/"
     order_data_file = "order_data.json"
     expected_calls = [
-        call(mock_page, base_url, "receipt1", order_data_file),
-        call(mock_page, base_url, "receipt2", order_data_file),
+        call(mock_page, base_url + "receipt1", "receipt1", order_data_file),
+        call(mock_page, base_url + "receipt2", "receipt2", order_data_file),
     ]
     mock_parse_receipt.assert_has_calls(expected_calls, any_order=True)
     mock_context.close.assert_called_once()
