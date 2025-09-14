@@ -5,10 +5,18 @@ from random import randint
 from time import sleep
 from datetime import datetime
 from bs4 import BeautifulSoup
-from typing import List, Dict, Any, Optional, Union
+from typing import List, Dict, Any, Optional, Union, TypedDict
 
 
 log = get_log()
+
+
+class ReceiptInfo(TypedDict):
+    receipt_id: str
+    date: Optional[str]
+    total: str
+    tax: str
+    items: List[Dict[str, Any]]
 
 
 def receipt_id_exists(filename: str, receipt_id: str) -> bool:
@@ -97,7 +105,15 @@ def remove_symbols(text_string):
     return text_string
 
 
-def format_date(date_string, current_format="%B %d, %Y"):  # March 22, 2025
+def format_date(date_string, current_format="%b. %d, %Y"):  # March 22, 2025
+    """"
+    Convert date string to YYYY-MM-DD format
+    Default format is "Month DD, YYYY"
+    Example input:
+    <span class="font-bold">Order Date: </span>
+    Sep. 10, 2025
+    </span>
+    """
     try:
         date_object = datetime.strptime(date_string, current_format)
         return date_object.strftime("%Y-%m-%d")
@@ -108,25 +124,27 @@ def format_date(date_string, current_format="%B %d, %Y"):  # March 22, 2025
 def extract_span_text(soup, span_string):
     # Search for the string and work backwards to get the total
     find_span = soup.find('span', string=span_string)
-    span_text = find_span.next_sibling.text
+    span_text = find_span.find_next_sibling().text
     return span_text
 
 
-def output_receipt(receipt_id, receipt_date, receipt_total, receipt_tax, receipt_items, output_file):
-    log.info(f"Writing receipt ID: {receipt_id} to {output_file}")
+def output_receipt(receipt_info: ReceiptInfo, output_file: str):
+    log.info(f"Function: output_receipt, writing receipt ID: {receipt_info['receipt_id']} to {output_file}")
     receipt_data = {
-        "receipt_id": receipt_id,
-        "date": receipt_date,
-        "total": receipt_total,
-        "tax": receipt_tax,
-        "items": receipt_items
+        "receipt_id": receipt_info['receipt_id'],
+        "date": receipt_info['date'],
+        "total": receipt_info['total'],
+        "tax": receipt_info['tax'],
+        "items": receipt_info['items']
     }
+    log.debug(f"Function: output_receipt, receipt data: {receipt_data}")
     try:
         with open(output_file, 'r+') as f:
             try:
                 receipts = json.load(f)
             except json.JSONDecodeError:
                 receipts = []  # File is empty or corrupt
+                log.warning(f"Function: output_receipt, file '{output_file}' is empty or corrupt. Starting a new list.")
             if isinstance(receipts, list):
                 receipts.append(receipt_data)
             else:
@@ -141,7 +159,7 @@ def output_receipt(receipt_id, receipt_date, receipt_total, receipt_tax, receipt
             json.dump([receipt_data], f, indent=None)  # Use indent=4 for pretty printing, indent=None for compact
 
 
-def parse_receipt(page, receipt_url, receipt_id, output_file):
+def parse_receipt(page, receipt_url, receipt_id) -> ReceiptInfo:
     sleep(randint(3, 20))
     page.goto(receipt_url)
     sleep(randint(3, 20))
@@ -151,10 +169,16 @@ def parse_receipt(page, receipt_url, receipt_id, output_file):
     receipt_total = extract_span_text(soup, "Order Total")
     receipt_total = remove_symbols(receipt_total)
     receipt_date = extract_span_text(soup, "Order Date: ")
-    receipt_date = format_date(receipt_date)
+    receipt_date = format_date(receipt_date) 
     receipt_tax = extract_span_text(soup, "Sales Tax")
     receipt_tax = remove_symbols(receipt_tax)
     receipt_items = parse_items(soup)
-    log.info(f"Receipt ID: {receipt_id} items gathered, writing receipt to {output_file}")
-    output_receipt(receipt_id, receipt_date, receipt_total, receipt_tax, receipt_items, output_file)
-    return f"Receipt ID '{receipt_id}' parsed and saved to '{output_file}'."
+    
+    receipt_info: ReceiptInfo = {
+        "receipt_id": receipt_id,
+        "date": receipt_date,
+        "total": receipt_total,
+        "tax": receipt_tax,
+        "items": receipt_items
+    }
+    return receipt_info
