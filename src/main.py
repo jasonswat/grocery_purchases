@@ -7,11 +7,10 @@ log = get_log()
 
 
 def main(settings: AppSettings):
-
     """Main function."""
 
-    #kroger_domain = 'www.kroger.com' # should work on this site, but the receipt pages are slightly different, can't parse receipts yetceipts
-    kroger_domain = 'www.qfc.com'
+    # kroger_domain = 'www.kroger.com' # should work on this site, but the receipt pages are slightly different, can't parse receipts yetceipts
+    kroger_domain = "www.qfc.com"
     purchases_url = f"https://{kroger_domain}/mypurchases"
     # page that you want to go to after sign in
     # redirect_url = "https://www.qfc.com/mypurchases?tab=purchases&page=36"
@@ -29,12 +28,18 @@ def main(settings: AppSettings):
                 # Check if the receipt already exists, if it does,
                 # we log then skip to the next
                 if receipt_id_exists("order_data.json", receipt_id):
-                    log.info(f"Receipt ID '{receipt_id}' already exists in 'order_data.json'. Skipping parsing.")
+                    log.info(
+                        f"Receipt ID '{receipt_id}' already exists in 'order_data.json'. Skipping parsing."
+                    )
                 else:
-                    log.info(f"Receipt ID '{receipt_id}' does not exist in 'order_data.json'. Parsing receipt.")
+                    log.info(
+                        f"Receipt ID '{receipt_id}' does not exist in 'order_data.json'. Parsing receipt."
+                    )
                     receipt_info = parse_receipt(page, receipt_url, receipt_id)
                     output_receipt(receipt_info, "order_data.json")
-                    log.info(f"Receipt ID '{receipt_id}' parsed and saved to 'order_data.json'.")
+                    log.info(
+                        f"Receipt ID '{receipt_id}' parsed and saved to 'order_data.json'."
+                    )
         finally:
             context.close()
             browser.close()

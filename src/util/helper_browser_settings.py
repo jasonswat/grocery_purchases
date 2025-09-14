@@ -21,10 +21,12 @@ def test_browser_settings():
         browser, context = setup_context(p, settings)
         page = context.new_page()
         page.goto("https://bot.sannysoft.com/")
-        page.wait_for_load_state('load')
+        page.wait_for_load_state("load")
         move_mouse(page)
-        page.screenshot(path='browser_settings.png')
-        log.info("Screenshot saved to browser_settings.png, validate all checks are passing.")
+        page.screenshot(path="browser_settings.png")
+        log.info(
+            "Screenshot saved to browser_settings.png, validate all checks are passing."
+        )
         sleep(10)
         page.close()
         context.close()
