@@ -124,7 +124,7 @@ def format_date(date_string, current_format="%b. %d, %Y"):  # March 22, 2025
 def extract_span_text(soup, span_string):
     # Search for the string and work backwards to get the total
     find_span = soup.find('span', string=span_string)
-    span_text = find_span.next_sibling.text
+    span_text = find_span.find_next_sibling().text
     return span_text
 
 
