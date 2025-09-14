@@ -32,9 +32,11 @@ with sync_playwright() as p:
     # Added logic to log and remove test_data.json
     test_data_path = project_root / "test_data.json"
     if test_data_path.exists():
-        with open(test_data_path, 'r') as f:
+        with open(test_data_path, "r") as f:
             test_data_content = json.load(f)
-            log.debug(f"Contents of test_data.json: {json.dumps(test_data_content, indent=2)}")
+            log.debug(
+                f"Contents of test_data.json: {json.dumps(test_data_content, indent=2)}"
+            )
         os.remove(test_data_path)
         log.info(f"Removed {test_data_path}")
     else:
