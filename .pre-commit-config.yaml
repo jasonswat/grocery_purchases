@@ -1,0 +1,24 @@
+
+repos:
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+    -   id: check-added-large-files
+    -   id: check-yaml
+-   repo: https://github.com/psf/black
+    rev: 24.4.2
+    hooks:
+    -   id: black
+-   repo: local
+    hooks:
+    -   id: lint
+        name: lint
+        entry: make lint
+        language: system
+        pass_filenames: false
+-   repo: local
+    hooks:
+    -   id: anonymize-test-data
+        name: Anonymize Test Data
+        entry: ./anonymize_test_data.sh
+        language: script
