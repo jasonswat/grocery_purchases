@@ -20,6 +20,13 @@ class ReceiptInfo(TypedDict):
 
 
 def receipt_id_exists(filename: str, receipt_id: str) -> bool:
+    """
+    Check if a receipt ID exists in a JSON file.
+    Arguments:
+        filename: path to the JSON file
+        receipt_id: ID of the receipt to check
+    Returns: True if the receipt ID exists, False otherwise
+    """
     log.info(f"Checking if receipt ID '{receipt_id}' exists in '{filename}'.")
     try:
         with open(filename, "r") as f:
@@ -39,15 +46,31 @@ def receipt_id_exists(filename: str, receipt_id: str) -> bool:
 def parse_price_and_quantity(
     price_and_quantity: str,
 ) -> tuple[Optional[int], Optional[float], float]:
+    """
+    Parses a price and quantity string to extract quantity, weight, and price.
+    Arguments:
+        price_and_quantity: string containing price and quantity information
+    Returns: tuple containing quantity (int or None), weight (float or None), and price (float)
+    Format 1 "quantity x $price" example inputs:
+       "2 x $3.99"
+       "3 x $1.50"
+    Format 2 "weight lbs x $price each (approx.)" example inputs:
+       "1.28 lbs x $7.99 each (approx.)"
+       "0.5 lbs x $4.00 each (approx.)"
+    Format 1 example outputs:
+       (2, None, 3.99)
+       (3, None, 1.50)
+    Format 2 example outputs:
+       (None, 1.28, 7.99)
+       (None, 0.5, 4.00)
+    """
     quantity: Union[int, None]
     weight: Union[float, None]
-    # Format 1: "quantity x $price"
-    # Example: "2 x $3.99"
+    # Format 1: "quantity x $price" match
     match1 = re.match(
         r"(\d+\.?\d*)\s*\s*x\s*\$(\d+\.?\d*)(\s)?(each)?", price_and_quantity
     )
-    # Format 2: "weight lbs x $price each (approx.)"
-    # Example: "1.28 lbs x $7.99 each (approx.)"
+    # Format 2: "weight lbs x $price each (approx.)" match
     match2 = re.match(
         r"(\d+\.?\d*)\s*lbs\s*x\s*\$(\d+\.?\d*)(\s*each)?(\s*\(approx\.\))?",
         price_and_quantity,
@@ -67,6 +90,13 @@ def parse_price_and_quantity(
 
 
 def extract_upc(upc_string):
+    """Extracts the UPC code from a string.
+    Arguments:
+        upc_string: string containing the UPC code
+    Returns: UPC code as a string or None if not found
+    Example input: "UPC: 000111222333"
+    Example output: "000111222333"
+    """
     match = re.match(r"UPC:\s*(\d+)", upc_string)
     if match:
         return match.group(1)
@@ -120,7 +150,7 @@ def parse_items(soup):
 
 def remove_symbols(text_string):
     """
-    Remove unwanted symbols from a string, comas, dollar signs, etc.
+    Removes dollar signs($) from a string.
     Arguments:
         text_string: string to clean
     Returns: cleaned string
@@ -131,7 +161,7 @@ def remove_symbols(text_string):
 
 
 def format_date(date_string, current_format="%b. %d, %Y"):  # March 22, 2025
-    """ "
+    """
     Convert date string to YYYY-MM-DD format
     Default format is "Month DD, YYYY"
     Example input:
@@ -160,6 +190,12 @@ def extract_span_text(soup, span_string):
 
 
 def output_receipt(receipt_info: ReceiptInfo, output_file: str):
+    """
+    Write receipt information to a JSON file.
+    Arguments:
+        receipt_info: dictionary containing receipt information
+        output_file: path to the output JSON file
+    """
     log.info(
         f"Function: output_receipt, writing receipt ID: {receipt_info['receipt_id']} to {output_file}"
     )
@@ -200,6 +236,14 @@ def output_receipt(receipt_info: ReceiptInfo, output_file: str):
 
 
 def parse_receipt(page, receipt_url, receipt_id) -> ReceiptInfo:
+    """
+    Parse receipt information from a given URL using a Playwright page object using BeautifulSoup to extract receipt data.
+    Arguments:
+        page: Playwright page object
+        receipt_url: URL of the receipt to parse
+        receipt_id: ID of the receipt
+    Returns: dictionary containing receipt information
+    """
     sleep(randint(3, 20))
     page.goto(receipt_url)
     sleep(randint(3, 20))
