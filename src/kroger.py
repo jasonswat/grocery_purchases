@@ -108,6 +108,6 @@ def get_receipt_html(page, receipt_url, settings):
     ensure_signed_in(page, settings, receipt_url)
     random_sleep(max_sleep)
     page.wait_for_load_state("load")
-    page.is_visible("div.Receipt-container")
+    page.wait_for_selector("div.Receipt-container")
     html = page.inner_html("div.Receipt-container")
     return html
