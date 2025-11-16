@@ -14,7 +14,8 @@ def main(settings: AppSettings):
     purchases_url = f"https://{kroger_domain}/mypurchases"
     # page that you want to go to after sign in
     # redirect_url = "https://www.qfc.com/mypurchases?tab=purchases&page=36"
-    redirect_url = "https://www.qfc.com/mypurchases?tab=purchases&page=1"
+    # redirect_url = "https://www.qfc.com/mypurchases?tab=purchases&page=1"
+    redirect_url = "https://www.qfc.com/mypurchases?tab=purchases&page=2"
 
     with sync_playwright() as p:
         browser, context, page = sign_in(p, purchases_url, settings)
