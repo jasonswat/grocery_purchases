@@ -1,7 +1,8 @@
 from app_settings import AppSettings, get_log
-from kroger import get_receipts, sign_in
+from kroger import get_receipts
 from parse_receipt import parse_receipt, receipt_id_exists, output_receipt
 from playwright.sync_api import sync_playwright
+from utils import setup_context
 
 log = get_log()
 
@@ -15,10 +16,11 @@ def main(settings: AppSettings):
     # page that you want to go to after sign in
     # redirect_url = "https://www.qfc.com/mypurchases?tab=purchases&page=36"
     # redirect_url = "https://www.qfc.com/mypurchases?tab=purchases&page=1"
-    redirect_url = "https://www.qfc.com/mypurchases?tab=purchases&page=2"
+    redirect_url = "https://www.qfc.com/mypurchases?tab=purchases&page=3"
 
     with sync_playwright() as p:
-        browser, context, page = sign_in(p, purchases_url, settings)
+        browser, context = setup_context(p, settings)
+        page = context.new_page()
         try:
             receipts = get_receipts(page, purchases_url, redirect_url, settings)
             # For testing
