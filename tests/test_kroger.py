@@ -1,7 +1,5 @@
 import pytest
 from unittest.mock import MagicMock, patch
-from pydantic_settings import BaseSettings
-from pydantic import SecretStr
 
 from kroger import _perform_login
 
