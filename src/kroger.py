@@ -20,25 +20,30 @@ def get_basename_from_url(url):
     return os.path.basename(parsed_url.path)
 
 
+def _perform_login(page, settings, success_url):
+    """Fills out and submits the login form."""
+    username = settings.KROGER_USERNAME
+    password = settings.KROGER_PASSWORD.get_secret_value()
+    max_sleep = settings.MAX_SLEEP
+    timeout = settings.TIMEOUT
+
+    move_mouse(page)
+    random_sleep(max_sleep)
+    page.fill("input#signInName", username)
+    random_sleep(max_sleep)
+    page.fill("input#password", password)
+    random_sleep(max_sleep)
+    move_mouse(page)
+    page.click("button#continue:not([disabled]):not([tabindex])")
+    page.wait_for_url(success_url, timeout=timeout)
+    log.info("Sign-in successful.")
+
+
 def ensure_signed_in(page, settings, success_url):
     """Checks if we are on the login page, and if so, signs in."""
     if page.is_visible("input#signInName"):
         log.info("Login page detected. Signing in.")
-        username = settings.KROGER_USERNAME
-        password = settings.KROGER_PASSWORD.get_secret_value()
-        max_sleep = settings.MAX_SLEEP
-        timeout = settings.TIMEOUT
-
-        move_mouse(page)
-        random_sleep(max_sleep)
-        page.fill("input#signInName", username)
-        random_sleep(max_sleep)
-        page.fill("input#password", password)
-        random_sleep(max_sleep)
-        move_mouse(page)
-        page.click("button#continue:not([disabled]):not([tabindex])")
-        page.wait_for_url(success_url, timeout=timeout)
-        log.info("Sign-in successful.")
+        _perform_login(page, settings, success_url)
     else:
         log.info("Already signed in or not on the login page.")
 
@@ -78,26 +83,16 @@ def get_receipts(page, purchases_url, redirect_url, settings):
 
 
 def sign_in(p, purchases_url, settings):
-    username = settings.KROGER_USERNAME
-    password = settings.KROGER_PASSWORD.get_secret_value()
     timeout = settings.TIMEOUT
-    max_sleep = settings.MAX_SLEEP
     browser, context = setup_context(p, settings)
     page = context.new_page()
     page.goto(purchases_url, timeout=timeout)
     page.wait_for_load_state("load")
     move_mouse(page)
     # Interact with login form, add delays and mouse movement to simulate human behavior
-    random_sleep(max_sleep)
-    page.fill("input#signInName", username)
-    random_sleep(max_sleep)
-    page.fill("input#password", password)
-    random_sleep(max_sleep)
-    move_mouse(page)
-    page.click("button#continue:not([disabled]):not([tabindex])")
+    _perform_login(page, settings, purchases_url)
     user_agent = page.evaluate("() => navigator.userAgent")
     log.info(f"User-Agent: {user_agent}")
-    page.wait_for_url(purchases_url, timeout=timeout)
     return browser, context, page
 
 

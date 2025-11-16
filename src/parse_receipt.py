@@ -252,8 +252,7 @@ def parse_receipt(page, receipt_url, receipt_id) -> ReceiptInfo:
     soup = BeautifulSoup(html, "html.parser")
     receipt_total = extract_span_text(soup, "Order Total")
     receipt_total = remove_symbols(receipt_total)
-    receipt_date = extract_span_text(soup, "Order Date: ")
-    receipt_date = format_date(receipt_date)
+    receipt_date = receipt_id.split("~")[2]
     receipt_tax = extract_span_text(soup, "Sales Tax")
     receipt_tax = remove_symbols(receipt_tax)
     receipt_items = parse_items(soup)
