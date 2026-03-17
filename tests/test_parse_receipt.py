@@ -26,7 +26,7 @@ def test_parse_receipt_date_from_id(mock_parse_items):
     receipt_id = "705~00851~2025-03-22~11~1131604"
     receipt_url = "http://fake.com/receipt"
 
-    mock_page.inner_html.return_value = """
+    mock_page.content.return_value = """
     <div id="receipt-print-area">
         <div>
             <span class="font-bold">Order Total</span>

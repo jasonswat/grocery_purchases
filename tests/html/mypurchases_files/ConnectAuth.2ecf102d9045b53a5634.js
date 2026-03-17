@@ -1,0 +1,2 @@
+"use strict";(self.webpackChunkseamless_spa=self.webpackChunkseamless_spa||[]).push([[1668],{428459:(e,s,a)=>{a.r(s),a.d(s,{ConnectAuth:()=>u});var t=a(296540),l=a(461121),c=a(903351),n=a(416683),r=a(983390),u=()=>{var e=(0,n.useDispatch)(),s=(0,c.n5)();return s&&"logout"===s.source&&((0,c.RH)(),e((0,r.N)(s.context))),t.createElement("div",null,t.createElement(l.A,{className:"my-32",label:"Redirecting..."}))}}}]);
+//# sourceMappingURL=ConnectAuth.2ecf102d9045b53a5634.js.map
