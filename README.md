@@ -16,6 +16,19 @@ The easiest way to run the application is using Docker Compose.
     make docker-run
     ```
 
+## Configuration
+
+The application can be configured using the following environment variables. These can be set in a `.env` file or exported directly in your shell.
+
+| Variable | Description | Default Value | Required |
+| :--- | :--- | :--- | :--- |
+| `KROGER_USERNAME` | Your Kroger (or subsidiary like QFC) account email/username. | *None* | **Yes** |
+| `KROGER_PASSWORD` | Your Kroger account password. | *None* | **Yes** |
+| `LOGLEVEL` | Logging verbosity (DEBUG, INFO, WARNING, ERROR). | `INFO` | No |
+| `HEADLESS` | Whether to run the browser in headless mode. | `False` | No |
+| `TIMEOUT` | Browser timeout in milliseconds. | `60000` | No |
+| `MAX_SLEEP` | Max sleep (seconds) between actions to simulate human behavior. | `20` | No |
+
 ## Setup python environment:
 
 1. Create virtual python environment, depending on which you use:
