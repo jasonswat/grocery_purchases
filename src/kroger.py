@@ -79,6 +79,8 @@ def get_receipts(page, purchases_url, redirect_url, settings):
     log.debug(f"Found {len(purchase_list_items)} purchase list items.")
     links = []
     for item in purchase_list_items:
+        if not isinstance(item, Tag):
+            continue
         link = item.find("a")
         if link:
             links.append(link)

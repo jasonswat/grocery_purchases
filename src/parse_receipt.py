@@ -116,7 +116,7 @@ def parse_items(soup: BeautifulSoup) -> List[Dict[str, Any]]:
         raise ValueError("Could not find 'Item Details' section in receipt HTML.")
 
     # All items are in divs with `break-inside: avoid` style
-    item_containers = []
+    item_containers: List[Any] = []
     if item_details_header.parent:
         item_containers = item_details_header.parent.find_next_siblings(
             "div", style="break-inside: avoid;"
@@ -146,18 +146,25 @@ def parse_items(soup: BeautifulSoup) -> List[Dict[str, Any]]:
 
             quantity_str_element = container.find("span", text=re.compile(r"\s*x\s*\$"))
             if quantity_str_element:
-                quantity_text = quantity_str_element.text
+                # `quantity_str_element` can be a Tag or a NavigableString; normalize text
+                if isinstance(quantity_str_element, Tag):
+                    quantity_text = quantity_str_element.text
+                else:
+                    quantity_text = str(quantity_str_element)
+
                 quantity_match = re.match(r"(\d+)", quantity_text)
                 if quantity_match:
                     quantity = int(quantity_match.group(1))
 
-                original_price_element = quantity_str_element.find(
-                    "span", class_="line-through"
-                )
-                if original_price_element:
-                    original_price = float(
-                        remove_symbols(original_price_element.text.strip())
+                # Only call `.find` if we have a Tag
+                if isinstance(quantity_str_element, Tag):
+                    original_price_element = quantity_str_element.find(
+                        "span", class_="line-through"
                     )
+                    if original_price_element:
+                        original_price = float(
+                            remove_symbols(original_price_element.text.strip())
+                        )
 
             upc_element = container.find(string=re.compile(r"UPC: \d+"))
             upc_id = extract_upc(upc_element) if upc_element else None
@@ -292,7 +299,7 @@ def parse_receipt(page, receipt_url, receipt_id) -> ReceiptInfo:
     date_str = None
     if date_str_element:
         sibling = date_str_element.find_next_sibling(string=True)
-        date_str = sibling.strip() if sibling else None
+        date_str = str(sibling).strip() if sibling else None
 
     if date_str:
         # The string is like "Dec. 5, 2025"
