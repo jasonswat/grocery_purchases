@@ -1,5 +1,6 @@
 # App files
 order_data.json
+test_data.json
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -53,5 +54,7 @@ venv.bak/
 .idea/
 .vscode/
 
+# macOS
+.DS_Store
 # pyright
 .pyright/

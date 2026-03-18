@@ -4,7 +4,7 @@ from app_settings import get_log
 from random import randint
 from time import sleep
 from datetime import datetime
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 from typing import List, Dict, Any, Optional, Union, TypedDict
 
 
@@ -102,49 +102,85 @@ def extract_upc(upc_string):
         return match.group(1)
 
 
-def parse_items(soup):
+def parse_items(soup: BeautifulSoup) -> List[Dict[str, Any]]:
+    """
+    Parses items from the receipt HTML data.
+    Arguments:
+        soup: A BeautifulSoup object representing the receipt HTML.
+    Returns: A list of dictionaries, where each dictionary represents an item.
+    """
     items = []
-    item_groups = soup.find_all("div", class_="mt-8 mb-4")
-    if not item_groups:
-        log.error("No item groups found in receipt. Unable to parse items.")
-        raise ValueError("No item groups found in receipt.")
-    for item_group in item_groups:
+
+    item_details_header = soup.find("h2", string="Item Details")
+    if not item_details_header:
+        raise ValueError("Could not find 'Item Details' section in receipt HTML.")
+
+    # All items are in divs with `break-inside: avoid` style
+    item_containers = []
+    if item_details_header.parent:
+        item_containers = item_details_header.parent.find_next_siblings(
+            "div", style="break-inside: avoid;"
+        )
+
+    for container in item_containers:
+        if not isinstance(container, Tag):
+            continue
         try:
-            item_name = item_group.find(
-                "span", class_="kds-Text--m kds-Text--bold"
-            ).text
+            item_name_element = container.find(
+                "span", {"data-citrus-component": "Text", "class": "font-medium"}
+            )
+            if not item_name_element:
+                continue
+
+            item_name = item_name_element.text.strip()
+
+            price_element = item_name_element.find_next_sibling("span")
+            price = (
+                float(remove_symbols(price_element.text.strip()))
+                if price_element
+                else None
+            )
+
+            quantity = 1  # default
             original_price = None
-            log.debug(f"Item name: {item_name}")
-            line_through_span = item_group.find("span", class_="line-through")
-            if line_through_span:
-                # item will only have original price if it's a markdown
-                original_price = line_through_span.text
-                original_price = remove_symbols(original_price)
-            price_group = item_group.select("span.kds-Text--m:not(.kds-Text--bold)")
-            price_and_quantity = price_group[1].contents[0]
-            log.debug(f"Price and quantity: {price_and_quantity}")
-            item_upc = item_group.find(
-                "div",
-                class_="ml-12 mt-4 font-secondary body-s text-neutral-most-prominent",
-            ).text
-            upc_id = extract_upc(item_upc)
-            quantity, weight, price = parse_price_and_quantity(price_and_quantity)
+
+            quantity_str_element = container.find("span", text=re.compile(r"\s*x\s*\$"))
+            if quantity_str_element:
+                quantity_text = quantity_str_element.text
+                quantity_match = re.match(r"(\d+)", quantity_text)
+                if quantity_match:
+                    quantity = int(quantity_match.group(1))
+
+                original_price_element = quantity_str_element.find(
+                    "span", class_="line-through"
+                )
+                if original_price_element:
+                    original_price = float(
+                        remove_symbols(original_price_element.text.strip())
+                    )
+
+            upc_element = container.find(string=re.compile(r"UPC: \d+"))
+            upc_id = extract_upc(upc_element) if upc_element else None
+
             item: Dict[str, Any] = {
                 "upc_id": upc_id,
                 "item_name": item_name,
                 "quantity": quantity,
-                "weight": weight,
+                "weight": None,
                 "price": price,
                 "original_price": original_price,
             }
             items.append(item)
             log.debug(f"Added item to list: {item}")
-        except (AttributeError, IndexError) as e:
-            log.warning(f"Could not parse an item, skipping. Error: {e}")
+
+        except Exception as e:
+            log.warning(f"Could not parse an item from HTML, skipping. Error: {e}")
             continue
+
     if not items:
-        log.error("Could not parse any items from the receipt.")
-        raise ValueError("Could not parse any items from the receipt.")
+        log.error("Could not parse any items from the receipt HTML.")
+        raise ValueError("Could not parse any items from the receipt HTML.")
+
     return items
 
 
@@ -237,31 +273,56 @@ def output_receipt(receipt_info: ReceiptInfo, output_file: str):
 
 def parse_receipt(page, receipt_url, receipt_id) -> ReceiptInfo:
     """
-    Parse receipt information from a given URL using a Playwright page object using BeautifulSoup to extract receipt data.
+    Parse receipt information from a given URL by extracting the data from the HTML.
     Arguments:
         page: Playwright page object
         receipt_url: URL of the receipt to parse
         receipt_id: ID of the receipt
     Returns: dictionary containing receipt information
     """
-    sleep(randint(3, 20))
+    log.info(f"Parsing receipt {receipt_id} from {receipt_url}")
     page.goto(receipt_url)
-    sleep(randint(3, 20))
-    page.is_visible("div.PH-ProductCard-container")
-    html = page.inner_html("#receipt-print-area")
+    page.wait_for_load_state("load")
+    sleep(randint(3, 5))
+    html = page.content()
     soup = BeautifulSoup(html, "html.parser")
-    receipt_total = extract_span_text(soup, "Order Total")
-    receipt_total = remove_symbols(receipt_total)
-    receipt_date = receipt_id.split("~")[2]
-    receipt_tax = extract_span_text(soup, "Sales Tax")
-    receipt_tax = remove_symbols(receipt_tax)
+
+    # Find date
+    date_str_element = soup.find("span", string=re.compile("Order Date: "))
+    date_str = None
+    if date_str_element:
+        sibling = date_str_element.find_next_sibling(string=True)
+        date_str = sibling.strip() if sibling else None
+
+    if date_str:
+        # The string is like "Dec. 5, 2025"
+        receipt_date = format_date(date_str, "%b. %d, %Y")
+    else:
+        receipt_date = receipt_id.split("~")[2]
+
+    # Find total
+    total_element = soup.find("span", string="Order Total")
+    receipt_total = "0.00"
+    if total_element:
+        sibling = total_element.find_next_sibling()
+        if sibling:
+            receipt_total = sibling.text.strip()
+
+    # Find tax
+    tax_element = soup.find("span", string="Sales Tax")
+    receipt_tax = "0.00"
+    if tax_element:
+        sibling = tax_element.find_next_sibling()
+        if sibling:
+            receipt_tax = sibling.text.strip()
+
     receipt_items = parse_items(soup)
 
     receipt_info: ReceiptInfo = {
         "receipt_id": receipt_id,
         "date": receipt_date,
-        "total": receipt_total,
-        "tax": receipt_tax,
+        "total": remove_symbols(receipt_total),
+        "tax": remove_symbols(receipt_tax),
         "items": receipt_items,
     }
     return receipt_info

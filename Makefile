@@ -24,7 +24,7 @@ check_browser: ## Check to see if browser settings pass bot checks
 	python src/util/helper_browser_settings.py
 
 test_get_receipts:  ## Run get_receipts function with sample data
-	LOGLEVEL=INFO MAX_SLEEP=3 python src/util/helper_get_receipts.py
+	MAX_SLEEP=3 python src/util/helper_get_receipts.py
 
 main:  ## Run main.py 
 	PYTHONPATH=./src python src/main.py

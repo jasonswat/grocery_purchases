@@ -10,13 +10,12 @@ log = get_log()
 def main(settings: AppSettings):
     """Main function."""
 
-    # kroger_domain = 'www.kroger.com' # should work on this site, but the receipt pages are slightly different, can't parse receipts yetceipts
+    # kroger_domain = 'www.kroger.com' # should work on this site, but the receipt pages are slightly different, can't parse receipts yet
     kroger_domain = "www.qfc.com"
     purchases_url = f"https://{kroger_domain}/mypurchases"
     # page that you want to go to after sign in
     # redirect_url = "https://www.qfc.com/mypurchases?tab=purchases&page=36"
-    # redirect_url = "https://www.qfc.com/mypurchases?tab=purchases&page=1"
-    redirect_url = "https://www.qfc.com/mypurchases?tab=purchases&page=3"
+    redirect_url = "https://www.qfc.com/mypurchases?tab=purchases&page=37"
 
     with sync_playwright() as p:
         browser, context = setup_context(p, settings)
