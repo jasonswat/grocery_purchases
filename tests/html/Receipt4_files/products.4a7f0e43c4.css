@@ -1,0 +1,2 @@
+.ProductGridContainer *,.ProductGridContainer :after,.ProductGridContainer :before{box-sizing:border-box}.ProductListView{list-style:none;margin:0;padding:0}.AutoGrid{display:flex;flex-wrap:wrap}@supports (display:grid){.AutoGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr))}}.AutoGrid-cell{display:flex;flex-grow:1}.AutoGrid-cell>.MiniProductCard-card-container{width:100%}.AutoGrid-cell--flexFiller{margin-top:0!important;margin-bottom:0!important}
+/*# sourceMappingURL=products.4a7f0e43c4.css.map*/

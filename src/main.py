@@ -1,7 +1,8 @@
 from app_settings import AppSettings, get_log
-from kroger import get_receipts, sign_in
+from kroger import get_receipts
 from parse_receipt import parse_receipt, receipt_id_exists, output_receipt
 from playwright.sync_api import sync_playwright
+from utils import setup_context
 
 log = get_log()
 
@@ -9,15 +10,16 @@ log = get_log()
 def main(settings: AppSettings):
     """Main function."""
 
-    # kroger_domain = 'www.kroger.com' # should work on this site, but the receipt pages are slightly different, can't parse receipts yetceipts
+    # kroger_domain = 'www.kroger.com' # should work on this site, but the receipt pages are slightly different, can't parse receipts yet
     kroger_domain = "www.qfc.com"
     purchases_url = f"https://{kroger_domain}/mypurchases"
     # page that you want to go to after sign in
     # redirect_url = "https://www.qfc.com/mypurchases?tab=purchases&page=36"
-    redirect_url = "https://www.qfc.com/mypurchases?tab=purchases&page=1"
+    redirect_url = "https://www.qfc.com/mypurchases?tab=purchases&page=35"
 
     with sync_playwright() as p:
-        browser, context, page = sign_in(p, purchases_url, settings)
+        browser, context = setup_context(p, settings)
+        page = context.new_page()
         try:
             receipts = get_receipts(page, purchases_url, redirect_url, settings)
             # For testing

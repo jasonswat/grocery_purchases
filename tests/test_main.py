@@ -7,11 +7,11 @@ from main import main
 @patch("main.output_receipt")
 @patch("main.parse_receipt")
 @patch("main.get_receipts")
-@patch("main.sign_in")
-@patch("main.sync_playwright")
+@patch("main.setup_context")  # Patch setup_context
+@patch("playwright.sync_api.sync_playwright")  # Patch sync_playwright
 def test_main_happy_path(
-    _mock_sync_playwright,
-    mock_sign_in,
+    mock_sync_playwright,
+    mock_setup_context,  # New argument for the patched object
     mock_get_receipts,
     mock_parse_receipt,
     mock_output_receipt,
@@ -19,10 +19,23 @@ def test_main_happy_path(
     """Test the main function in a happy path scenario."""
     # Arrange
     mock_settings = MagicMock(spec=AppSettings)
+    mock_settings.HEADLESS = True
     mock_page = MagicMock()
     mock_context = MagicMock()
     mock_browser = MagicMock()
-    mock_sign_in.return_value = (mock_browser, mock_context, mock_page)
+
+    # Configure the mock_sync_playwright
+    mock_playwright_context = MagicMock()
+    mock_playwright_context.__enter__.return_value.chromium.launch.return_value = (
+        mock_browser
+    )
+    mock_browser.new_context.return_value = mock_context
+    mock_context.new_page.return_value = mock_page
+    mock_sync_playwright.return_value = mock_playwright_context
+
+    # Configure mock_setup_context to return mock_browser and mock_context
+    mock_setup_context.return_value = (mock_browser, mock_context)
+
     mock_get_receipts.return_value = ["receipt1", "receipt2"]
     mock_receipt_info = {
         "receipt_id": "receipt1",
@@ -37,7 +50,6 @@ def test_main_happy_path(
     main(settings=mock_settings)
 
     # Assert
-    mock_sign_in.assert_called_once()
     mock_get_receipts.assert_called_once()
     base_url = "https://www.qfc.com/mypurchases/image/"
     expected_parse_calls = [

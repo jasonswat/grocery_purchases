@@ -1,0 +1,15 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - KROGER_USERNAME=${KROGER_USERNAME:-your_username}
+      - KROGER_PASSWORD=${KROGER_PASSWORD:-your_password}
+      - LOGLEVEL=${LOGLEVEL:-INFO}
+      - HEADLESS=${HEADLESS:-True}
+      - TIMEOUT=${TIMEOUT:-60000}
+      - MAX_SLEEP=${MAX_SLEEP:-20}
+    volumes:
+      - .:/app
+    command: python src/main.py

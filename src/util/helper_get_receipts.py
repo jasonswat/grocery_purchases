@@ -18,15 +18,16 @@ project_root = Path(__file__).parent.parent.parent
 settings = AppSettings()  # Initialize settings
 log = get_log()  # Initialize logging
 log.info(f"Project root directory: {project_root}")
-purchases_url = f"file://{project_root}/tests/html/Purchase_History.html"
-receipt_url = f"file://{project_root}/tests/html/Receipt3.html"
+purchases_url = f"file://{project_root}/tests/html/mypurchases.html"
+receipt_url = f"file://{project_root}/tests/html/Receipt4.html"
+test_receipt_id = "705~00851~2025-12-05~10~2121723"  # Example receipt ID for testing
 
 with sync_playwright() as p:
     browser, context = setup_context(p, settings)
     page = context.new_page()
     page.goto(purchases_url)
     receipts = get_receipts(page, purchases_url, purchases_url, settings)
-    receipt_info = parse_receipt(page, receipt_url, "705~00851~2025-03-22~11~1131604")
+    receipt_info = parse_receipt(page, receipt_url, test_receipt_id)
     output_receipt(receipt_info, "test_data.json")
 
     # Added logic to log and remove test_data.json

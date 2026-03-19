@@ -1,6 +1,34 @@
 # Grocery Purchases
 Python app to pull grocery purchase history. Currently setup for kroger, but hoping to add additional grocers that make purchase history available online.
 
+## Quickstart (Docker)
+
+The easiest way to run the application is using Docker Compose.
+
+1.  **Clone the repository.**
+2.  **Configure Credentials**: Create a `.env` file or set the following environment variables:
+    ```bash
+    KROGER_USERNAME="your_username"
+    KROGER_PASSWORD="your_password"
+    ```
+3.  **Run with Docker Compose**:
+    ```bash
+    make docker-run
+    ```
+
+## Configuration
+
+The application can be configured using the following environment variables. These can be set in a `.env` file or exported directly in your shell.
+
+| Variable | Description | Default Value | Required |
+| :--- | :--- | :--- | :--- |
+| `KROGER_USERNAME` | Your Kroger (or subsidiary like QFC) account email/username. | *None* | **Yes** |
+| `KROGER_PASSWORD` | Your Kroger account password. | *None* | **Yes** |
+| `LOGLEVEL` | Logging verbosity (DEBUG, INFO, WARNING, ERROR). | `INFO` | No |
+| `HEADLESS` | Whether to run the browser in headless mode. | `False` | No |
+| `TIMEOUT` | Browser timeout in milliseconds. | `60000` | No |
+| `MAX_SLEEP` | Max sleep (seconds) between actions to simulate human behavior. | `20` | No |
+
 ## Setup python environment:
 
 1. Create virtual python environment, depending on which you use:
@@ -28,6 +56,16 @@ setup environment variables for your kroger account:
 export KROGER_USERNAME="your_username"
 export KROGER_PASSWORD="your_password"
 ```
+
+## Development Tasks (Makefile)
+
+The project includes a `Makefile` to simplify common development tasks:
+
+*   **Linting**: Run `make lint` to check for style and type errors.
+*   **Testing**: Run `make test` to execute the test suite with coverage.
+*   **Coverage Report**: Run `make coverage` to see the coverage report in your terminal.
+*   **Docker Tests**: Run `make docker-test` to execute tests within the Docker container environment.
+
 ## Avoid detection
 
 The script is pulling data for a single account which I own, but because I'm using playwright to automate it, the site is detecting it as a bot and blocking it. I believe Kroger is using Akamai for detecting bots.
@@ -42,7 +80,7 @@ Application firewalls are constantly updating their detection methods, so this m
 
 See links below in the resources section for more info on avoiding detection.
 
-## Enable Debugging
+## Enable Playwright Debugging
 
 ```bash
 export DEBUG=pw:api,pw:browser
