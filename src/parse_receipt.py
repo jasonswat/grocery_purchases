@@ -5,10 +5,40 @@ from random import randint
 from time import sleep
 from datetime import datetime
 from bs4 import BeautifulSoup, Tag
-from typing import List, Dict, Any, Optional, Union, TypedDict
+from typing import List, Dict, Any, Optional, Union, TypedDict, Pattern, Callable
 
 
 log = get_log()
+
+
+def _h2_item_details(tag: Any) -> bool:
+    if not isinstance(tag, Tag):
+        return False
+    if tag.name != "h2":
+        return False
+    return tag.string == "Item Details" if tag.string is not None else False
+
+
+def _span_text_pred(text: str) -> Callable[[Any], bool]:
+    def _pred(tag: Any) -> bool:
+        if not isinstance(tag, Tag):
+            return False
+        if tag.name != "span":
+            return False
+        return tag.get_text().strip() == text
+
+    return _pred
+
+
+def _span_contains_pattern(pattern: Union[str, Pattern[str]]) -> Callable[[Any], bool]:
+    def _pred(tag: Any) -> bool:
+        if not isinstance(tag, Tag):
+            return False
+        if tag.name != "span":
+            return False
+        return bool(re.search(pattern, tag.get_text() or ""))
+
+    return _pred
 
 
 class ReceiptInfo(TypedDict):
@@ -111,7 +141,7 @@ def parse_items(soup: BeautifulSoup) -> List[Dict[str, Any]]:
     """
     items = []
 
-    item_details_header = soup.find("h2", string="Item Details")
+    item_details_header = soup.find(_h2_item_details)
     if not item_details_header:
         raise ValueError("Could not find 'Item Details' section in receipt HTML.")
 
@@ -127,14 +157,15 @@ def parse_items(soup: BeautifulSoup) -> List[Dict[str, Any]]:
             continue
         try:
             item_name_element = container.find(
-                "span", {"data-citrus-component": "Text", "class": "font-medium"}
+                name="span",
+                attrs={"data-citrus-component": "Text", "class": "font-medium"},
             )
             if not item_name_element:
                 continue
 
             item_name = item_name_element.text.strip()
 
-            price_element = item_name_element.find_next_sibling("span")
+            price_element = item_name_element.find_next_sibling(name="span")
             price = (
                 float(remove_symbols(price_element.text.strip()))
                 if price_element
@@ -144,7 +175,7 @@ def parse_items(soup: BeautifulSoup) -> List[Dict[str, Any]]:
             quantity = 1  # default
             original_price = None
 
-            quantity_str_element = container.find("span", text=re.compile(r"\s*x\s*\$"))
+            quantity_str_element = container.find(_span_contains_pattern(r"\s*x\s*\$"))
             if quantity_str_element:
                 # `quantity_str_element` can be a Tag or a NavigableString; normalize text
                 if isinstance(quantity_str_element, Tag):
@@ -159,7 +190,7 @@ def parse_items(soup: BeautifulSoup) -> List[Dict[str, Any]]:
                 # Only call `.find` if we have a Tag
                 if isinstance(quantity_str_element, Tag):
                     original_price_element = quantity_str_element.find(
-                        "span", class_="line-through"
+                        name="span", class_="line-through"
                     )
                     if original_price_element:
                         original_price = float(
@@ -227,7 +258,7 @@ def extract_span_text(soup, span_string):
         span_string: string to search for in the span
     Returns: text of the next sibling span element after the given string
     """
-    find_span = soup.find("span", string=span_string)
+    find_span = soup.find(_span_text_pred(span_string))
     span_text = find_span.find_next_sibling().text
     return span_text
 
@@ -295,11 +326,11 @@ def parse_receipt(page, receipt_url, receipt_id) -> ReceiptInfo:
     soup = BeautifulSoup(html, "html.parser")
 
     # Find date
-    date_str_element = soup.find("span", string=re.compile("Order Date: "))
+    date_str_element = soup.find(_span_contains_pattern(r"Order Date: "))
     date_str = None
     if date_str_element:
-        sibling = date_str_element.find_next_sibling(string=True)
-        date_str = str(sibling).strip() if sibling else None
+        date_sibling = date_str_element.find_next_sibling(string=True)
+        date_str = str(date_sibling).strip() if date_sibling else None
 
     if date_str:
         # The string is like "Dec. 5, 2025"
@@ -308,20 +339,20 @@ def parse_receipt(page, receipt_url, receipt_id) -> ReceiptInfo:
         receipt_date = receipt_id.split("~")[2]
 
     # Find total
-    total_element = soup.find("span", string="Order Total")
+    total_element = soup.find(_span_text_pred("Order Total"))
     receipt_total = "0.00"
     if total_element:
-        sibling = total_element.find_next_sibling()
-        if sibling:
-            receipt_total = sibling.text.strip()
+        total_sibling = total_element.find_next_sibling()
+        if total_sibling:
+            receipt_total = total_sibling.text.strip()
 
     # Find tax
-    tax_element = soup.find("span", string="Sales Tax")
+    tax_element = soup.find(_span_text_pred("Sales Tax"))
     receipt_tax = "0.00"
     if tax_element:
-        sibling = tax_element.find_next_sibling()
-        if sibling:
-            receipt_tax = sibling.text.strip()
+        tax_sibling = tax_element.find_next_sibling()
+        if tax_sibling:
+            receipt_tax = tax_sibling.text.strip()
 
     receipt_items = parse_items(soup)
 
