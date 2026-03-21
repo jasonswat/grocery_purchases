@@ -3,11 +3,12 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    shm_size: 1gb
     environment:
       - KROGER_USERNAME=${KROGER_USERNAME:-your_username}
       - KROGER_PASSWORD=${KROGER_PASSWORD:-your_password}
       - LOGLEVEL=${LOGLEVEL:-INFO}
-      - HEADLESS=${HEADLESS:-True}
+      - HEADLESS=${HEADLESS:-False}
       - TIMEOUT=${TIMEOUT:-60000}
       - MAX_SLEEP=${MAX_SLEEP:-20}
     volumes:

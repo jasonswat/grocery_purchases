@@ -6,9 +6,6 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONPATH=/app/src
 
-# Create a non-root user and set permissions
-RUN groupadd -r appuser && useradd -r -g appuser -d /app -s /sbin/nologin appuser
-
 # Set working directory
 WORKDIR /app
 
@@ -20,15 +17,17 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Playwright is already installed in the base image, but we need to ensure browsers are there.
 RUN playwright install chromium
 
-# Copy the source code and tests
+# Create the /tmp/.X11-unix directory with correct permissions for Xvfb
+RUN mkdir -p /tmp/.X11-unix && chmod 1777 /tmp/.X11-unix
+
+# Copy the source code, tests, and entrypoint
 COPY src/ /app/src/
 COPY tests/ /app/tests/
+COPY scripts/docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-# Ensure the appuser owns the working directory
-RUN chown -R appuser:appuser /app
-
-# Switch to the non-root user
-USER appuser
+# Use the entrypoint to start Xvfb before running the command
+ENTRYPOINT ["docker-entrypoint.sh"]
 
 # Set the default command to run the main application
 CMD ["python", "src/main.py"]

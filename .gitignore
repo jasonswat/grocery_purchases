@@ -1,6 +1,7 @@
 # App files
 order_data.json
 test_data.json
+output
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

@@ -1,6 +1,6 @@
 from time import sleep
 from playwright.sync_api import sync_playwright
-from app_settings import AppSettings, log
+from app_settings import AppSettings, get_log
 from utils import move_mouse, setup_context
 
 """
@@ -13,6 +13,7 @@ Output: browser_settings.png
 
 
 settings = AppSettings()
+log = get_log()
 
 
 def test_browser_settings():
@@ -23,7 +24,7 @@ def test_browser_settings():
         page.goto("https://bot.sannysoft.com/")
         page.wait_for_load_state("load")
         move_mouse(page)
-        page.screenshot(path="browser_settings.png")
+        page.screenshot(path="output/browser_settings.png")
         log.info(
             "Screenshot saved to browser_settings.png, validate all checks are passing."
         )

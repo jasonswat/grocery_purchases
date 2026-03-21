@@ -16,7 +16,7 @@ def rotate_user_agent() -> str:
     # ua = UserAgent(min_version=134.0)  # User agents newer than min_version
     # ua = UserAgent(os='Linux')  # User agents from Linux platforms
     ua = UserAgent(os="Mac OS X")  # User agents from Mac platforms
-    return ua.random  # returns a random user agent string
+    return ua.chrome  # returns a random chrome user agent string
     # For testing, return a fixed user agent string
     # return "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36"
 
@@ -31,16 +31,19 @@ def setup_context(
         "--ignore-gpu-blocklist",
         "--use-gl=angle",
         "--no-first-run",
-        "--enable-automation",
         "--disable-extensions",
         "--disable-infobars",
+        "--disable-dev-shm-usage",
     ]
     # Other browsers to try
     # browser = playwright.webkit.launch(headless=False, slow_mo=50)
     # browser = playwright.firefox.launch(headless=False, slow_mo=50)
     # browser = playwright.chromium.launch(headless=False, channel='msedge', slow_mo=50)
     browser = playwright.chromium.launch(
-        headless=settings.HEADLESS, slow_mo=50, args=browser_args
+        headless=settings.HEADLESS,
+        slow_mo=50,
+        args=browser_args,
+        ignore_default_args=["--enable-automation"],
     )
     context = browser.new_context(
         viewport={"width": 1280, "height": 720}, user_agent=rotate_user_agent()
