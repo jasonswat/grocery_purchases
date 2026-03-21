@@ -5,10 +5,10 @@ from utils import rotate_user_agent, setup_context, move_mouse
 
 
 def test_rotate_user_agent():
-    """Test that rotate_user_agent returns a random user agent string."""
+    """Test that rotate_user_agent returns a random chrome user agent string."""
     with patch("utils.UserAgent") as mock_user_agent:
         mock_instance = mock_user_agent.return_value
-        mock_instance.random = "test_user_agent"
+        mock_instance.chrome = "test_user_agent"
         result = rotate_user_agent()
         assert result == "test_user_agent"
         mock_user_agent.assert_called_once_with(os="Mac OS X")
