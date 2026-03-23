@@ -29,6 +29,26 @@ The application can be configured using the following environment variables. The
 | `TIMEOUT` | Browser timeout in milliseconds. | `60000` | No |
 | `MAX_SLEEP` | Max sleep (seconds) between actions to simulate human behavior. | `20` | No |
 
+## Data Storage
+
+The application stores receipt data in a partitioned JSON format. Each receipt is saved as an individual file in the `output/receipts/` directory, named by its `receipt_id` (e.g., `output/receipts/705~00851~2025-12-05~10~2121723.json`).
+
+This approach allows for:
+- **Efficient lookups**: Checking if a receipt exists is a simple file system check.
+- **Data Integrity**: New fields are automatically included in every save.
+- **Easy Analysis**: A separate application can iterate through the files to generate insights.
+
+### Data Schema
+Each JSON file contains:
+- `receipt_id`: Unique identifier for the transaction.
+- `date`: Purchase date in `YYYY-MM-DD` format.
+- `total`: Total amount paid.
+- `tax`: Sales tax amount.
+- `store_name`: The banner name (e.g., "QFC").
+- `store_id`: The specific store number (e.g., "00851").
+- `order_type`: The fulfillment method ("In-Store", "Pickup", or "Delivery").
+- `items`: A list of purchased items, including UPC, name, quantity, and price.
+
 ## Setup python environment:
 
 1. Create virtual python environment, depending on which you use:

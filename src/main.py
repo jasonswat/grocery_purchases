@@ -15,7 +15,7 @@ def main(settings: AppSettings):
     purchases_url = f"https://{kroger_domain}/mypurchases"
     # page that you want to go to after sign in
     # redirect_url = "https://www.qfc.com/mypurchases?tab=purchases&page=36"
-    redirect_url = "https://www.qfc.com/mypurchases?tab=purchases&page=33"
+    redirect_url = "https://www.qfc.com/mypurchases?tab=purchases&page=32"
 
     with sync_playwright() as p:
         browser, context = setup_context(p, settings)
@@ -29,19 +29,17 @@ def main(settings: AppSettings):
                 receipt_url = purchases_url + "/image/" + receipt_id
                 # Check if the receipt already exists, if it does,
                 # we log then skip to the next
-                if receipt_id_exists("order_data.json", receipt_id):
+                if receipt_id_exists("", receipt_id):
                     log.info(
-                        f"Receipt ID '{receipt_id}' already exists in 'order_data.json'. Skipping parsing."
+                        f"Receipt ID '{receipt_id}' already exists. Skipping parsing."
                     )
                 else:
                     log.info(
-                        f"Receipt ID '{receipt_id}' does not exist in 'order_data.json'. Parsing receipt."
+                        f"Receipt ID '{receipt_id}' does not exist. Parsing receipt."
                     )
                     receipt_info = parse_receipt(page, receipt_url, receipt_id)
-                    output_receipt(receipt_info, "order_data.json")
-                    log.info(
-                        f"Receipt ID '{receipt_id}' parsed and saved to 'order_data.json'."
-                    )
+                    output_receipt(receipt_info, "")
+                    log.info(f"Receipt ID '{receipt_id}' parsed and saved.")
         finally:
             context.close()
             browser.close()

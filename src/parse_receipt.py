@@ -6,6 +6,7 @@ from time import sleep
 from datetime import datetime
 from bs4 import BeautifulSoup, Tag
 from typing import List, Dict, Any, Optional, Union, TypedDict, Pattern, Callable
+from pathlib import Path
 
 
 log = get_log()
@@ -47,30 +48,25 @@ class ReceiptInfo(TypedDict):
     total: str
     tax: str
     items: List[Dict[str, Any]]
+    store_name: Optional[str]
+    store_id: Optional[str]
+    order_type: str
 
 
 def receipt_id_exists(filename: str, receipt_id: str) -> bool:
     """
-    Check if a receipt ID exists in a JSON file.
+    Check if a receipt ID exists. For partitioned storage, filename is ignored
+    and we check for the existence of the receipt file in output/receipts/.
     Arguments:
-        filename: path to the JSON file
+        filename: (Deprecated) path to the JSON file
         receipt_id: ID of the receipt to check
     Returns: True if the receipt ID exists, False otherwise
     """
-    log.info(f"Checking if receipt ID '{receipt_id}' exists in '{filename}'.")
-    try:
-        with open(filename, "r") as f:
-            receipts: List[Dict[str, Any]] = json.load(f)
-    except FileNotFoundError:
-        log.error(f"Error: File '{filename}' not found.")
-        return False
-    except json.JSONDecodeError:
-        log.error(f"Error: File '{filename}' is not a valid JSON file.")
-        return False
-    for record in receipts:
-        if record.get("receipt_id") == receipt_id:
-            return True
-    return False
+    receipt_path = Path("output/receipts") / f"{receipt_id}.json"
+    exists = receipt_path.exists()
+    if exists:
+        log.info(f"Receipt ID '{receipt_id}' already exists at {receipt_path}")
+    return exists
 
 
 def parse_price_and_quantity(
@@ -265,48 +261,37 @@ def extract_span_text(soup, span_string):
 
 def output_receipt(receipt_info: ReceiptInfo, output_file: str):
     """
-    Write receipt information to a JSON file.
+    Write receipt information to an individual JSON file in output/receipts/.
     Arguments:
         receipt_info: dictionary containing receipt information
-        output_file: path to the output JSON file
+        output_file: (Deprecated) path to the output JSON file
     """
+    receipt_id = receipt_info["receipt_id"]
+    output_dir = Path("output/receipts")
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    output_path = output_dir / f"{receipt_id}.json"
+
     log.info(
-        f"Function: output_receipt, writing receipt ID: {receipt_info['receipt_id']} to {output_file}"
+        f"Function: output_receipt, writing receipt ID: {receipt_id} to {output_path}"
     )
+
     receipt_data = {
         "receipt_id": receipt_info["receipt_id"],
         "date": receipt_info["date"],
         "total": receipt_info["total"],
         "tax": receipt_info["tax"],
+        "store_name": receipt_info.get("store_name"),
+        "store_id": receipt_info.get("store_id"),
+        "order_type": receipt_info.get("order_type", "Unknown"),
         "items": receipt_info["items"],
     }
-    log.debug(f"Function: output_receipt, receipt data: {receipt_data}")
+
     try:
-        with open(output_file, "r+") as f:
-            try:
-                receipts = json.load(f)
-            except json.JSONDecodeError:
-                receipts = []  # File is empty or corrupt
-                log.warning(
-                    f"Function: output_receipt, file '{output_file}' is empty or corrupt. Starting a new list."
-                )
-            if isinstance(receipts, list):
-                receipts.append(receipt_data)
-            else:
-                receipts = [
-                    receipts,
-                    receipt_data,
-                ]  # The json file was a single dictionary, convert to a list
-            f.seek(0)  # Go back to the beginning of the file
-            json.dump(receipts, f, indent=None)
-            f.truncate()  # Remove the old content
-    except FileNotFoundError:
-        log.info(f"File '{output_file}' not found, creating file.")
-        # File doesn't exist, create it and write the receipt
-        with open(output_file, "w") as f:
-            json.dump(
-                [receipt_data], f, indent=None
-            )  # Use indent=4 for pretty printing, indent=None for compact
+        with open(output_path, "w") as f:
+            json.dump(receipt_data, f, indent=4)
+    except Exception as e:
+        log.error(f"Failed to write receipt {receipt_id} to {output_path}: {e}")
 
 
 def parse_receipt(page, receipt_url, receipt_id) -> ReceiptInfo:
@@ -325,6 +310,32 @@ def parse_receipt(page, receipt_url, receipt_id) -> ReceiptInfo:
     html = page.content()
     soup = BeautifulSoup(html, "html.parser")
 
+    # Find store info and order type
+    store_name = None
+    store_id = None
+    order_type = "In-Store"  # Default
+
+    # Extract store_id from receipt_id if format is "banner~store~date~..."
+    id_parts = receipt_id.split("~")
+    if len(id_parts) >= 2:
+        store_id = id_parts[1]
+
+    # Look for Banner Name in script tags
+    banner_match = re.search(r'window\.__BANNER_NAME__\s*=\s*"([^"]+)"', html)
+    if banner_match:
+        store_name = banner_match.group(1).upper()
+
+    # Determine order type
+    # If "TERMINAL ID" exists, it's definitely In-Store.
+    # Otherwise check for common online keywords
+    terminal_element = soup.find(string=re.compile(r"TERMINAL ID", re.I))
+    if not terminal_element:
+        # Check for online indicators in the HTML
+        if soup.find(string=re.compile(r"Pickup|Pick up", re.I)):
+            order_type = "Pickup"
+        elif soup.find(string=re.compile(r"Delivery", re.I)):
+            order_type = "Delivery"
+
     # Find date
     date_str_element = soup.find(_span_contains_pattern(r"Order Date: "))
     date_str = None
@@ -336,7 +347,7 @@ def parse_receipt(page, receipt_url, receipt_id) -> ReceiptInfo:
         # The string is like "Dec. 5, 2025"
         receipt_date = format_date(date_str, "%b. %d, %Y")
     else:
-        receipt_date = receipt_id.split("~")[2]
+        receipt_date = id_parts[2] if len(id_parts) > 2 else None
 
     # Find total
     total_element = soup.find(_span_text_pred("Order Total"))
@@ -362,5 +373,8 @@ def parse_receipt(page, receipt_url, receipt_id) -> ReceiptInfo:
         "total": remove_symbols(receipt_total),
         "tax": remove_symbols(receipt_tax),
         "items": receipt_items,
+        "store_name": store_name,
+        "store_id": store_id,
+        "order_type": order_type,
     }
     return receipt_info
