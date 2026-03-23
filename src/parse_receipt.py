@@ -290,7 +290,7 @@ def output_receipt(receipt_info: ReceiptInfo, output_file: str):
     try:
         with open(output_path, "w") as f:
             json.dump(receipt_data, f, indent=4)
-    except Exception as e:
+    except (IOError, OSError) as e:
         log.error(f"Failed to write receipt {receipt_id} to {output_path}: {e}")
 
 
