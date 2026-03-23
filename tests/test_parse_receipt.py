@@ -1,5 +1,4 @@
 import json
-import os
 import pytest
 from bs4 import BeautifulSoup, Tag
 from parse_receipt import (
@@ -17,6 +16,7 @@ from parse_receipt import (
     output_receipt,
 )
 from unittest.mock import MagicMock, patch
+from pathlib import Path
 
 
 def test_h2_item_details():
@@ -59,22 +59,15 @@ def test_span_contains_pattern():
 
 
 def test_receipt_id_exists(tmp_path):
-    file_path = tmp_path / "receipts.json"
-    receipts = [{"receipt_id": "123"}, {"receipt_id": "456"}]
+    receipts_dir = tmp_path / "output" / "receipts"
+    receipts_dir.mkdir(parents=True)
+    (receipts_dir / "123.json").write_text("{}")
 
-    with open(file_path, "w") as f:
-        json.dump(receipts, f)
-
-    assert receipt_id_exists(str(file_path), "123") is True
-    assert receipt_id_exists(str(file_path), "789") is False
-
-    # Test FileNotFoundError
-    assert receipt_id_exists("non_existent.json", "123") is False
-
-    # Test JSONDecodeError
-    invalid_file = tmp_path / "invalid.json"
-    invalid_file.write_text("not json")
-    assert receipt_id_exists(str(invalid_file), "123") is False
+    # We patch Path in parse_receipt to use our tmp_path
+    with patch("parse_receipt.Path") as mock_path:
+        mock_path.side_effect = lambda *args: Path(tmp_path, *args)
+        assert receipt_id_exists("", "123") is True
+        assert receipt_id_exists("", "456") is False
 
 
 def test_parse_price_and_quantity():
@@ -209,49 +202,28 @@ def test_extract_span_text():
 
 
 def test_output_receipt(tmp_path):
-    output_file = tmp_path / "output.json"
     receipt_info = {
         "receipt_id": "123",
         "date": "2025-03-22",
         "total": "10.00",
         "tax": "1.00",
         "items": [],
+        "store_name": "QFC",
+        "store_id": "00851",
+        "order_type": "In-Store",
     }
 
-    # Test file doesn't exist
-    output_receipt(receipt_info, str(output_file))
-    with open(output_file, "r") as f:
-        data = json.load(f)
-        assert len(data) == 1
-        assert data[0]["receipt_id"] == "123"
+    with patch("parse_receipt.Path") as mock_path:
+        mock_path.side_effect = lambda *args: Path(tmp_path, *args)
+        output_receipt(receipt_info, "")
 
-    # Test file exists and is a list
-    receipt_info2 = receipt_info.copy()
-    receipt_info2["receipt_id"] = "456"
-    output_receipt(receipt_info2, str(output_file))
-    with open(output_file, "r") as f:
-        data = json.load(f)
-        assert len(data) == 2
-        assert data[1]["receipt_id"] == "456"
+        expected_file = tmp_path / "output" / "receipts" / "123.json"
+        assert expected_file.exists()
 
-    # Test file exists and is not a list (edge case in code)
-    output_file_dict = tmp_path / "output_dict.json"
-    with open(output_file_dict, "w") as f:
-        json.dump(receipt_info, f)
-
-    output_receipt(receipt_info2, str(output_file_dict))
-    with open(output_file_dict, "r") as f:
-        data = json.load(f)
-        assert isinstance(data, list)
-        assert len(data) == 2
-
-    # Test JSONDecodeError (corrupt file)
-    corrupt_file = tmp_path / "corrupt.json"
-    corrupt_file.write_text("invalid json")
-    output_receipt(receipt_info, str(corrupt_file))
-    with open(corrupt_file, "r") as f:
-        data = json.load(f)
-        assert len(data) == 1
+        with open(expected_file, "r") as f:
+            data = json.load(f)
+            assert data["receipt_id"] == "123"
+            assert data["store_name"] == "QFC"
 
 
 @patch("parse_receipt.parse_items")
@@ -259,10 +231,12 @@ def test_parse_receipt(mock_parse_items):
     mock_parse_items.return_value = [{"item_name": "Test Item"}]
     mock_page = MagicMock()
     mock_page.content.return_value = """
+    <script>window.__BANNER_NAME__ = "QFC"</script>
     <div>
         <span>Order Date: </span>Sep. 22, 2025
         <span>Order Total</span><span>$11.00</span>
         <span>Sales Tax</span><span>$1.00</span>
+        <span>TERMINAL ID 10</span>
     </div>
     """
 
@@ -273,6 +247,9 @@ def test_parse_receipt(mock_parse_items):
     assert receipt_info["date"] == "2025-09-22"
     assert receipt_info["total"] == "11.00"
     assert receipt_info["tax"] == "1.00"
+    assert receipt_info["store_name"] == "QFC"
+    assert receipt_info["store_id"] == "00851"
+    assert receipt_info["order_type"] == "In-Store"
     assert receipt_info["items"] == [{"item_name": "Test Item"}]
 
 

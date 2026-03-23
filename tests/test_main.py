@@ -42,6 +42,9 @@ def test_main_happy_path(
         "date": "2025-09-13",
         "total": "100.00",
         "tax": "10.00",
+        "store_name": "QFC",
+        "store_id": "00851",
+        "order_type": "In-Store",
         "items": [],
     }
     mock_parse_receipt.return_value = mock_receipt_info
@@ -59,10 +62,9 @@ def test_main_happy_path(
     mock_parse_receipt.assert_has_calls(expected_parse_calls, any_order=True)
 
     expected_output_calls = [
-        call(mock_receipt_info, "order_data.json"),
-        call(mock_receipt_info, "order_data.json"),
+        call(mock_receipt_info, ""),
+        call(mock_receipt_info, ""),
     ]
     mock_output_receipt.assert_has_calls(expected_output_calls, any_order=True)
-
     mock_context.close.assert_called_once()
     mock_browser.close.assert_called_once()

@@ -28,6 +28,7 @@ with sync_playwright() as p:
     page.goto(purchases_url)
     receipts = get_receipts(page, purchases_url, purchases_url, settings)
     receipt_info = parse_receipt(page, receipt_url, test_receipt_id)
+    print(f"DEBUG: Extracted Receipt Info: {json.dumps(receipt_info, indent=2)}")
     output_receipt(receipt_info, "test_data.json")
 
     # Added logic to log and remove test_data.json
