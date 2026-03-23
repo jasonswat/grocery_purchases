@@ -3,7 +3,7 @@
 This document summarizes key rules and best practices from the Google Python Style Guide.
 
 ## 1. Python Language Rules
-- **Linting:** Run `pylint` on your code to catch bugs and style issues.
+- **Linting:** Run `flake8` and `mypy` on your code to catch bugs and style issues.
 - **Imports:** Use `import x` for packages/modules. Use `from x import y` only when `y` is a submodule.
 - **Exceptions:** Use built-in exception classes. Do not use bare `except:` clauses.
 - **Global State:** Avoid mutable global state. Module-level constants are okay and should be `ALL_CAPS_WITH_UNDERSCORES`.
