@@ -55,7 +55,7 @@ def migrate(input_file: str, output_dir: str):
                 json.dump(receipt, f, indent=4)
             migrated_count += 1
             log.debug(f"Migrated {receipt_id}")
-        except Exception as e:
+        except (IOError, OSError) as e:
             log.error(f"Failed to write {receipt_id}: {e}")
 
     log.info(f"Migration complete. Migrated {migrated_count} receipts.")
