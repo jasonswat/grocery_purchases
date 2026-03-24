@@ -51,23 +51,14 @@ Each JSON file contains:
 
 ## Setup python environment:
 
-1. Create virtual python environment, depending on which you use:
-
-create pyenv virtual environment and activate:
+1. Install `uv` (if not already installed):
 ```bash
-pyenv virtualenv 3.12.2 kroger312
-pyenv activate kroger312
+curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-create miniconda virtual environment and activate:
+2. Setup virtual environment and install dependencies:
 ```bash
-conda create -n kroger312 python=3.12
-conda activate kroger312
-```
-
-2. Install dependencies:
-```bash
-pip install -r requirements.txt
+uv sync
 ```
 
 3. Setup Credentials
@@ -75,6 +66,11 @@ setup environment variables for your kroger account:
 ```bash
 export KROGER_USERNAME="your_username"
 export KROGER_PASSWORD="your_password"
+```
+
+4. Run the application:
+```bash
+uv run make main
 ```
 
 ## Development Tasks (Makefile)
