@@ -177,12 +177,16 @@ source = { editable = "." }
 dependencies = [
     { name = "bs4" },
     { name = "fake-useragent" },
-    { name = "flake8" },
-    { name = "mypy" },
     { name = "playwright" },
-    { name = "pre-commit" },
     { name = "pydantic" },
     { name = "pydantic-settings" },
+]
+
+[package.optional-dependencies]
+dev = [
+    { name = "flake8" },
+    { name = "mypy" },
+    { name = "pre-commit" },
     { name = "pytest" },
     { name = "pytest-cov" },
     { name = "pytest-playwright" },
@@ -192,16 +196,17 @@ dependencies = [
 requires-dist = [
     { name = "bs4", specifier = ">=0.0.2" },
     { name = "fake-useragent", specifier = ">=2.1.0" },
-    { name = "flake8", specifier = ">=7.3.0" },
-    { name = "mypy", specifier = ">=1.10.0" },
+    { name = "flake8", marker = "extra == 'dev'", specifier = ">=7.3.0" },
+    { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.10.0" },
     { name = "playwright", specifier = ">=1.51.0" },
-    { name = "pre-commit" },
+    { name = "pre-commit", marker = "extra == 'dev'" },
     { name = "pydantic", specifier = ">=2.11.7" },
     { name = "pydantic-settings", specifier = ">=2.10.1" },
-    { name = "pytest", specifier = ">=8.4.1" },
-    { name = "pytest-cov", specifier = ">=5.0.0" },
-    { name = "pytest-playwright", specifier = ">=0.7.0" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.4.1" },
+    { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=5.0.0" },
+    { name = "pytest-playwright", marker = "extra == 'dev'", specifier = ">=0.7.0" },
 ]
+provides-extras = ["dev"]
 
 [[package]]
 name = "identify"

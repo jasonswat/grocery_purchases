@@ -8,7 +8,7 @@ help: ## this help
 	@awk 'BEGIN {FS = ":.*?## "} /^[\/a-zA-Z_-]+:.*?## / {sub("\\\\n",sprintf("\n%22c"," "), $$2);printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' Makefile
 
 setup: ## Setup virtual environment and install requirements
-	uv sync
+	uv sync --extra dev
 
 lint: ## run pycodestyle on python files
 	uv run flake8 ./src
