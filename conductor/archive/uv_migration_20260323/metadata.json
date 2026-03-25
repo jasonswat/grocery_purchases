@@ -1,8 +1,0 @@
-{
-  "track_id": "uv_migration_20260323",
-  "type": "chore",
-  "status": "new",
-  "created_at": "2026-03-23T10:00:00Z",
-  "updated_at": "2026-03-23T10:00:00Z",
-  "description": "I want to replace pyenv with uv for python environment setup and also want to include it in the docker container."
-}
