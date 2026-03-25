@@ -70,7 +70,7 @@ export KROGER_PASSWORD="your_password"
 
 4. Run the application:
 ```bash
-uv run make main
+make main
 ```
 
 ## Development Tasks (Makefile)
