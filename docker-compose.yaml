@@ -11,6 +11,4 @@ services:
       - HEADLESS=${HEADLESS:-False}
       - TIMEOUT=${TIMEOUT:-60000}
       - MAX_SLEEP=${MAX_SLEEP:-20}
-    volumes:
-      - .:/app
-    command: python src/main.py
+    # Use the image's default CMD which runs via `uv run` to activate the venv

@@ -37,7 +37,11 @@ def main(settings: AppSettings):
                     log.info(
                         f"Receipt ID '{receipt_id}' does not exist. Parsing receipt."
                     )
-                    receipt_info = parse_receipt(page, receipt_url, receipt_id)
+                    try:
+                        receipt_info = parse_receipt(page, receipt_url, receipt_id)
+                    except Exception as e:
+                        log.error(f"Failed to parse receipt {receipt_id}: {e}")
+                        continue
                     output_receipt(receipt_info, "")
                     log.info(f"Receipt ID '{receipt_id}' parsed and saved.")
         finally:

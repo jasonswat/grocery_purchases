@@ -7,33 +7,33 @@ export PYTHONPATH LOGLEVEL
 help: ## this help
 	@awk 'BEGIN {FS = ":.*?## "} /^[\/a-zA-Z_-]+:.*?## / {sub("\\\\n",sprintf("\n%22c"," "), $$2);printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' Makefile
 
-requirements: ## Install requirements
-	pip install -r requirements.txt
+setup: ## Setup virtual environment and install requirements
+	uv sync --extra dev
 
 lint: ## run pycodestyle on python files
-	flake8 ./src
-	mypy --ignore-missing-imports --check-untyped-defs ./src
+	uv run flake8 ./src
+	uv run mypy --ignore-missing-imports --check-untyped-defs ./src
 
 test: ## Run tests with coverage
-	pytest --cov=src --cov-report=html
+	uv run pytest --cov=src --cov-report=html
 
 coverage: ## Run tests with coverage and display report in terminal
-	pytest --cov=src --cov-report=term-missing
+	uv run pytest --cov=src --cov-report=term-missing
 
 check_browser: ## Check to see if browser settings pass bot checks
-	python src/util/helper_browser_settings.py
+	uv run python src/util/helper_browser_settings.py
 
 test_get_receipts:  ## Run get_receipts function with sample data
-	MAX_SLEEP=3 python src/util/helper_get_receipts.py
+	MAX_SLEEP=3 uv run python src/util/helper_get_receipts.py
 
 main:  ## Run main.py 
-	PYTHONPATH=./src python src/main.py
+	PYTHONPATH=./src uv run python src/main.py
 
 docker-build: ## Build the docker image
-	docker build -t grocery-purchases .
+	docker compose build
 
 docker-run: ## Run the docker container
-	docker compose up --build
+	docker compose up --build --force-recreate
 
 docker-test: ## Run tests inside the docker container
-	docker run --rm grocery-purchases pytest tests
+	docker run --rm grocery-purchases uv run pytest tests
