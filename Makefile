@@ -30,10 +30,10 @@ main:  ## Run main.py
 	PYTHONPATH=./src uv run python src/main.py
 
 docker-build: ## Build the docker image
-	docker build -t grocery-purchases .
+	docker compose build
 
 docker-run: ## Run the docker container
-	docker compose up --build
+	docker compose up --build --force-recreate
 
 docker-test: ## Run tests inside the docker container
 	docker run --rm grocery-purchases uv run pytest tests
