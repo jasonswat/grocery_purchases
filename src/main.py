@@ -13,18 +13,20 @@ def main(settings: AppSettings):
     # kroger_domain = 'www.kroger.com' # should work on this site, but the receipt pages are slightly different, can't parse receipts yet
     kroger_domain = "www.qfc.com"
     purchases_url = f"https://{kroger_domain}/mypurchases"
-    # page that you want to go to after sign in
-    # redirect_url = "https://www.qfc.com/mypurchases?tab=purchases&page=36"
-    redirect_url = "https://www.qfc.com/mypurchases?tab=purchases&page=32"
+
+    # Handle PAGES setting
+    pages_to_scrape = settings.pages
+    log.info(f"Pages to scrape: {pages_to_scrape}")
 
     with sync_playwright() as p:
         browser, context = setup_context(p, settings)
         page = context.new_page()
         try:
-            receipts = get_receipts(page, purchases_url, redirect_url, settings)
-            # For testing
-            # receipts = ['705~00851~2023-04-04~500~1261444', '705~00851~2023-04-06~504~1841930', '705~00851~2023-04-07~504~1511846']
-            for receipt_id in receipts:
+            # get_receipts now handles multiple pages based on settings.pages
+            receipt_ids = get_receipts(page, purchases_url, settings)
+            log.info(f"Total receipts found: {len(receipt_ids)}")
+
+            for receipt_id in receipt_ids:
                 # Construct the receipt URL
                 receipt_url = purchases_url + "/image/" + receipt_id
                 # Check if the receipt already exists, if it does,

@@ -25,7 +25,7 @@ def test_setup_context(mock_rotate_user_agent):
     mock_rotate_user_agent.return_value = "test_user_agent"
 
     mock_settings = MagicMock()
-    mock_settings.HEADLESS = True
+    mock_settings.headless = True
 
     browser, context = setup_context(mock_playwright, mock_settings)
 

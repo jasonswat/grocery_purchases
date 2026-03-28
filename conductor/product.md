@@ -20,6 +20,8 @@ To become a unified tool for gathering grocery purchase data from multiple retai
 - **Stealth Mode:** Advanced techniques to evade bot detection (e.g., Akamai), ensuring reliable data collection.
 - **Partitioned Storage:** Efficiently save receipts as individual JSON files for fast lookups and easy processing.
 - **Scalable Architecture:** A clear structure for adding new scrapers as the project grows.
+- **Dynamic Pagination:** Scrape specific ranges, all available history, or specific pages with a single command.
+- **Local Simulation:** Test parsing and pagination logic against local HTML files, avoiding unnecessary website hits and potential account lockouts.
 
 ## Future Roadmap
 - **Price History Tracking:** Monitor item prices over time to predict the best shopping windows.

@@ -3,30 +3,27 @@ from random import randint
 from time import sleep
 from app_settings import get_log
 from utils import move_mouse, setup_context
-from bs4 import BeautifulSoup, Tag
+from bs4 import BeautifulSoup
 from urllib.parse import urlparse
-from playwright.sync_api import TimeoutError
 
 log = get_log()
 
 
 def random_sleep(max_sleep):
-    sleep_time = randint(3, max_sleep)
-    log.debug(f"Sleeping for {sleep_time} seconds to simulate human interaction.")
+    """Sleeps for a random amount of time."""
+    if max_sleep < 1:
+        return
+    sleep_time = randint(1, max_sleep)
+    log.debug(f"Sleeping for {sleep_time} seconds.")
     sleep(sleep_time)
-
-
-def get_basename_from_url(url):
-    parsed_url = urlparse(url)
-    return os.path.basename(parsed_url.path)
 
 
 def _perform_login(page, settings, success_url):
     """Fills out and submits the login form."""
-    username = settings.KROGER_USERNAME
-    password = settings.KROGER_PASSWORD.get_secret_value()
-    max_sleep = settings.MAX_SLEEP
-    timeout = settings.TIMEOUT
+    username = settings.kroger_username
+    password = settings.kroger_password.get_secret_value()
+    max_sleep = settings.max_sleep
+    timeout = settings.timeout
 
     move_mouse(page)
     random_sleep(max_sleep)
@@ -46,62 +43,105 @@ def ensure_signed_in(page, settings, purchases_url):
         page.wait_for_selector("input#signInName", state="visible", timeout=5000)
         log.info("Login page detected. Signing in.")
         _perform_login(page, settings, purchases_url)
-    except TimeoutError:
+    except Exception:
         log.info("Already signed in or not on the login page.")
 
 
-def get_receipts(page, purchases_url, redirect_url, settings):
-    max_sleep = settings.MAX_SLEEP
-    timeout = settings.TIMEOUT
+def get_purchase_url(base_url, page_num):
+    """Generates the URL for a specific page of purchases."""
+    if base_url.startswith("file://"):
+        path = base_url.replace("file://", "")
+        # Look for p1.html, p2.html in the specified path
+        file_path = os.path.join(path, f"p{page_num}.html")
+        if os.path.exists(file_path):
+            return f"file://{file_path}"
+        return None
+    else:
+        # Standard live URL format
+        return f"{base_url}?tab=purchases&page={page_num}"
+
+
+def get_receipts(page, purchases_url, settings):
+    max_sleep = settings.max_sleep
+    pages_setting = settings.pages
+
+    # Parse pages_setting
+    target_pages = []
+    limit = None
+    if pages_setting == "all":
+        limit = float("inf")
+    elif pages_setting.startswith("max"):
+        limit = int(pages_setting.replace("max", ""))
+    else:
+        try:
+            target_pages = [int(pages_setting)]
+        except ValueError:
+            log.error(f"Invalid pages setting: {pages_setting}. Defaulting to page 1.")
+            target_pages = [1]
+
     log.debug(f"Navigating to purchases url: {purchases_url}")
     page.goto(purchases_url)
     ensure_signed_in(page, settings, purchases_url)
-    random_sleep(max_sleep)
-    page.wait_for_load_state("load")
-    log.debug("Waiting for purchase results column.")
-    page.wait_for_selector("#PurchaseResultsColumn", timeout=timeout)
-    log.debug("Purchase results column found.")
 
-    log.debug(f"Navigating to redirect url: {redirect_url}")
-    page.goto(redirect_url)
-    ensure_signed_in(page, settings, redirect_url)
-    random_sleep(max_sleep)
-    page.wait_for_load_state("load")
-    log.debug("Waiting for purchase results column on redirect page.")
-    page.wait_for_selector("#PurchaseResultsColumn", timeout=timeout)
-    log.debug("Purchase results column found on redirect page.")
-    log.debug("Getting inner html of #PurchaseResultsColumn")
-    html = page.inner_html("#PurchaseResultsColumn")
-    log.debug(f"HTML received (first 500 chars): {html[:500]}")
-    soup = BeautifulSoup(html, "html.parser")
-    # We find list items for purchases and then find the link within them.
-    purchase_list_items = soup.find_all("li", {"class": "PO-NonPendingPurchase"})
-    log.debug(f"Found {len(purchase_list_items)} purchase list items.")
-    links = []
-    for item in purchase_list_items:
-        if not isinstance(item, Tag):
+    all_receipt_ids = []
+
+    current_page_num = 1
+    while True:
+        # If we have specific pages to scrape, skip if not in list
+        if target_pages and current_page_num not in target_pages:
+            if current_page_num > max(target_pages):
+                break
+            current_page_num += 1
             continue
-        link = item.find("a")
-        if link:
-            links.append(link)
 
-    log.debug(f"Found {len(links)} links.")
-    log.debug(f"Links: {links}")
-    receipts = []
-    for a in links:
-        log.debug(f"a: {a}")
-        if isinstance(a, Tag):
-            href = a.get("href")
-            if href:
-                receipt_id = get_basename_from_url(href)
-                receipts.append(receipt_id)
-                log.debug(f"receipt_id: {receipt_id}")
-    log.info(f"Found {len(receipts)} receipts {receipts}.")
-    return receipts
+        # Generate URL for current page
+        redirect_url = get_purchase_url(purchases_url, current_page_num)
+        if not redirect_url:
+            log.info(f"No more local files found for page {current_page_num}.")
+            break
+
+        log.info(f"Scraping page {current_page_num}: {redirect_url}")
+        page.goto(redirect_url)
+        try:
+            page.wait_for_load_state("load")
+            page.wait_for_selector("li.PO-NonPendingPurchase", timeout=10000)
+        except Exception:
+            log.info(f"No purchase items found on page {current_page_num} or timeout.")
+            # If it's a live site, maybe we reached the end.
+            # If it's local, we already checked existence.
+            break
+
+        soup = BeautifulSoup(page.content(), "html.parser")
+        purchase_items = soup.select("li.PO-NonPendingPurchase")
+        log.info(
+            f"Found {len(purchase_items)} purchase items on page {current_page_num}."
+        )
+
+        page_receipt_ids = []
+        for item in purchase_items:
+            a_tag = item.find("a", href=True)
+            if a_tag:
+                # Extract ID from href: /mypurchases/detail/ID
+                receipt_url = str(a_tag["href"])
+                receipt_id = os.path.basename(urlparse(receipt_url).path)
+                page_receipt_ids.append(receipt_id)
+
+        all_receipt_ids.extend(page_receipt_ids)
+
+        if limit and current_page_num >= limit:
+            break
+
+        if target_pages and current_page_num >= max(target_pages):
+            break
+
+        current_page_num += 1
+        random_sleep(max_sleep)
+
+    return all_receipt_ids
 
 
 def sign_in(p, purchases_url, settings):
-    timeout = settings.TIMEOUT
+    timeout = settings.timeout
     browser, context = setup_context(p, settings)
     page = context.new_page()
     page.goto(purchases_url, timeout=timeout)
@@ -115,8 +155,8 @@ def sign_in(p, purchases_url, settings):
 
 
 def get_receipt_html(page, receipt_url, settings):
-    timeout = settings.TIMEOUT
-    max_sleep = settings.MAX_SLEEP
+    timeout = settings.timeout
+    max_sleep = settings.max_sleep
     page.goto(receipt_url, timeout=timeout)
     ensure_signed_in(page, settings, receipt_url)
     random_sleep(max_sleep)

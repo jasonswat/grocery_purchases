@@ -10,7 +10,7 @@
 
 ## Configuration & Data Validation
 - **Pydantic (v2):** Ensures that all parsed data (receipts, items, stores) conforms to a strict schema.
-- **Pydantic Settings:** Manages application configuration via environment variables with strong typing and validation.
+- **Pydantic Settings:** Manages application configuration via environment variables and **CLI arguments** with strong typing and validation.
 
 ## Quality Assurance & Testing
 - **Pytest:** The primary framework for writing and running the test suite, executed via `uv run`.

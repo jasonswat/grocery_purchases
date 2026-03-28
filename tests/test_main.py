@@ -19,7 +19,8 @@ def test_main_happy_path(
     """Test the main function in a happy path scenario."""
     # Arrange
     mock_settings = MagicMock(spec=AppSettings)
-    mock_settings.HEADLESS = True
+    mock_settings.headless = True
+    mock_settings.pages = "1"
     mock_page = MagicMock()
     mock_context = MagicMock()
     mock_browser = MagicMock()
@@ -68,3 +69,48 @@ def test_main_happy_path(
     mock_output_receipt.assert_has_calls(expected_output_calls, any_order=True)
     mock_context.close.assert_called_once()
     mock_browser.close.assert_called_once()
+
+
+@patch("main.output_receipt")
+@patch("main.parse_receipt")
+@patch("main.get_receipts")
+@patch("main.setup_context")
+@patch("playwright.sync_api.sync_playwright")
+def test_main_parse_error(
+    mock_sync_playwright,
+    mock_setup_context,
+    mock_get_receipts,
+    mock_parse_receipt,
+    mock_output_receipt,
+):
+    """Test that main continues if one receipt fails to parse."""
+    mock_settings = MagicMock(spec=AppSettings)
+    mock_settings.headless = True
+    mock_settings.pages = "1"
+    mock_page = MagicMock()
+    mock_context = MagicMock()
+    mock_browser = MagicMock()
+
+    mock_playwright_context = MagicMock()
+    mock_playwright_context.__enter__.return_value.chromium.launch.return_value = (
+        mock_browser
+    )
+    mock_browser.new_context.return_value = mock_context
+    mock_context.new_page.return_value = mock_page
+    mock_sync_playwright.return_value = mock_playwright_context
+    mock_setup_context.return_value = (mock_browser, mock_context)
+
+    mock_get_receipts.return_value = ["fail", "success"]
+
+    # First call raises error, second succeeds
+    mock_parse_receipt.side_effect = [
+        Exception("Parse error"),
+        {"receipt_id": "success", "items": []},
+    ]
+
+    from main import main
+
+    main(settings=mock_settings)
+
+    assert mock_parse_receipt.call_count == 2
+    mock_output_receipt.assert_called_once()  # Only for the successful one

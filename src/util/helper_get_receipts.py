@@ -15,6 +15,9 @@ Test script to verify get_receipts and parse_receipt functions using a local HTM
 
 # Get the project root directory (which is the parent of the 'src' directory)
 project_root = Path(__file__).parent.parent.parent
+# Mock required env vars for AppSettings
+os.environ["KROGER_USERNAME"] = "test"
+os.environ["KROGER_PASSWORD"] = "test"
 settings = AppSettings()  # Initialize settings
 log = get_log()  # Initialize logging
 log.info(f"Project root directory: {project_root}")
