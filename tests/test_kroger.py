@@ -7,10 +7,10 @@ from kroger import _perform_login
 @pytest.fixture
 def mock_settings():
     settings = MagicMock()
-    settings.KROGER_USERNAME = "testuser"
-    settings.KROGER_PASSWORD.get_secret_value.return_value = "testpass"
-    settings.MAX_SLEEP = 5
-    settings.TIMEOUT = 1000
+    settings.kroger_username = "testuser"
+    settings.kroger_password.get_secret_value.return_value = "testpass"
+    settings.max_sleep = 5
+    settings.timeout = 1000
     return settings
 
 
@@ -33,3 +33,47 @@ def test_perform_login(mock_page, mock_settings):
         "button#continue:not([disabled]):not([tabindex])"
     )
     mock_page.wait_for_url.assert_called_once_with(success_url, timeout=1000)
+
+
+@patch("kroger.setup_context")
+def test_sign_in(mock_setup_context, mock_settings):
+    mock_playwright = MagicMock()
+    mock_browser = MagicMock()
+    mock_context = MagicMock()
+    mock_page = MagicMock()
+    mock_setup_context.return_value = (mock_browser, mock_context)
+    mock_context.new_page.return_value = mock_page
+
+    from kroger import sign_in
+
+    browser, context, page = sign_in(
+        mock_playwright, "https://example.com", mock_settings
+    )
+
+    assert browser == mock_browser
+    assert context == mock_context
+    assert page == mock_page
+    mock_page.goto.assert_called_once_with("https://example.com", timeout=1000)
+
+
+def test_get_receipt_html(mock_page, mock_settings):
+    mock_page.inner_html.return_value = "<div>receipt</div>"
+
+    from kroger import get_receipt_html
+
+    html = get_receipt_html(mock_page, "https://example.com/receipt", mock_settings)
+
+    assert html == "<div>receipt</div>"
+    mock_page.goto.assert_called_once_with("https://example.com/receipt", timeout=1000)
+    mock_page.wait_for_selector.assert_any_call("div.Receipt-container")
+
+
+def test_ensure_signed_in_already_signed_in(mock_page, mock_settings):
+    mock_page.wait_for_selector.side_effect = Exception("Not found")
+
+    from kroger import ensure_signed_in
+
+    ensure_signed_in(mock_page, mock_settings, "https://example.com")
+
+    # Should not call _perform_login (which calls fill)
+    assert mock_page.fill.call_count == 0

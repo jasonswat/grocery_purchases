@@ -40,7 +40,7 @@ def setup_context(
     # browser = playwright.firefox.launch(headless=False, slow_mo=50)
     # browser = playwright.chromium.launch(headless=False, channel='msedge', slow_mo=50)
     browser = playwright.chromium.launch(
-        headless=settings.HEADLESS,
+        headless=settings.headless,
         slow_mo=50,
         args=browser_args,
         ignore_default_args=["--enable-automation"],

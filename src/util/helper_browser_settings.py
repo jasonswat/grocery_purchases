@@ -1,3 +1,4 @@
+import os
 from time import sleep
 from playwright.sync_api import sync_playwright
 from app_settings import AppSettings, get_log
@@ -11,7 +12,9 @@ Check this file to validate it's all green
 Output: browser_settings.png
 """
 
-
+# Mock required env vars for AppSettings
+os.environ["KROGER_USERNAME"] = "test"
+os.environ["KROGER_PASSWORD"] = "test"
 settings = AppSettings()
 log = get_log()
 
